@@ -73,6 +73,7 @@
                                 <filter>
                                     <artifact>log4j:log4j</artifact>
                                     <excludes>
+                                        <exclude>META-INF/**</exclude>
                                         <exclude>org/apache/log4j/Hierarchy.class</exclude>
                                     </excludes>
                                 </filter>
