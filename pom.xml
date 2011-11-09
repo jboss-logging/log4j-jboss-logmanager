@@ -30,6 +30,19 @@
     <artifactId>log4j-jboss-logmanager</artifactId>
     <version>1.0.0.Beta1-SNAPSHOT</version>
 
+    <licenses>
+        <license>
+            <name>lgpl</name>
+            <url>http://repository.jboss.org/licenses/lgpl-2.1.txt</url>
+            <distribution>repo</distribution>
+        </license>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
