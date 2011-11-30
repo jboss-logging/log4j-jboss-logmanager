@@ -60,6 +60,11 @@
             <artifactId>jboss-logmanager</artifactId>
             <version>1.2.0.GA</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.8.2</version>
+        </dependency>
     </dependencies>
 
 
@@ -88,12 +93,26 @@
                                     <excludes>
                                         <exclude>META-INF/**</exclude>
                                         <exclude>org/apache/log4j/Hierarchy.class</exclude>
+                                        <exclude>org/apache/log4j/Category.class</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemProperties>
+                        <property>
+                            <name>java.util.logging.manager</name>
+                            <value>org.jboss.logmanager.LogManager</value>
+                        </property>
+                    </systemProperties>
+                </configuration>
             </plugin>
         </plugins>
 

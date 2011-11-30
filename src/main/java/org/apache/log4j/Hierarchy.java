@@ -22,13 +22,12 @@
 
 package org.apache.log4j;
 
+import static org.jboss.logmanager.Logger.AttachmentKey;
+
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import org.jboss.logmanager.LogContext;
-
-import static org.jboss.logmanager.Logger.AttachmentKey;
 
 import org.apache.log4j.helpers.LogLog;
 import org.apache.log4j.or.ObjectRenderer;
@@ -39,6 +38,7 @@ import org.apache.log4j.spi.LoggerRepository;
 import org.apache.log4j.spi.RendererSupport;
 import org.apache.log4j.spi.ThrowableRenderer;
 import org.apache.log4j.spi.ThrowableRendererSupport;
+import org.jboss.logmanager.LogContext;
 
 /**
  * Our replacement for the log4j {@code Hierarchy} class.  We redirect management of the hierarchy
@@ -52,6 +52,8 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
     private Set<HierarchyEventListener> listeners;
     private volatile Logger root;
     private final LogContext context;
+    private Level thresholdLevel;
+    private int thresholdInt;
 
     /**
      * Create a new logger hierarchy.
@@ -70,7 +72,7 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
     }
 
     public void addHierarchyEventListener(HierarchyEventListener listener) {
-        if (! listeners.add(listener)) {
+        if (!listeners.add(listener)) {
             LogLog.warn("Ignoring attempt to add an existent listener.");
         }
     }
@@ -87,9 +89,19 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
     }
 
     public void setThreshold(String levelStr) {
+        Level l = Level.toLevel(levelStr, null);
+        if (l != null) {
+            setThreshold(l);
+        } else {
+            LogLog.warn("Could not convert [" + levelStr + "] to Level.");
+        }
     }
 
     public void setThreshold(Level l) {
+        if (l != null) {
+            thresholdInt = l.level;
+            thresholdLevel = l;
+        }
     }
 
     public void fireAddAppenderEvent(Category logger, Appender appender) {
@@ -105,7 +117,7 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
     }
 
     public Level getThreshold() {
-        return Level.ALL;
+        return thresholdLevel;
     }
 
     public Logger getLogger(String name) {
@@ -121,7 +133,12 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
         logger = factory.makeNewLoggerInstance(name);
         logger.setHierarchy(this);
         final Logger appearingLogger = lmLogger.attachIfAbsent(loggerKey, logger);
-        return appearingLogger != null ? appearingLogger : logger;
+        if (appearingLogger != null) {
+            updateParents(appearingLogger);
+            return appearingLogger;
+        }
+        updateParents(logger);
+        return logger;
     }
 
     public Enumeration getCurrentLoggers() {
@@ -141,7 +158,7 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
     }
 
     public boolean isDisabled(int level) {
-        return false;
+        return thresholdInt > level;
     }
 
     public void overrideAsNeeded(String override) {
@@ -164,6 +181,25 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
     }
 
     public void shutdown() {
+    }
+
+    private void updateParents(Logger cat) {
+        String name = cat.name;
+        int length = name.length();
+        boolean parentFound = false;
+
+        // if name = "w.x.y.z", loop thourgh "w.x.y", "w.x" and "w", but not "w.x.y.z"
+        for (int i = name.lastIndexOf('.', length - 1); i >= 0; i = name.lastIndexOf('.', i - 1)) {
+            String substr = name.substring(0, i);
+            final org.jboss.logmanager.Logger lmLogger = LogContext.getLogContext().getLogger(substr);
+            cat.parent = lmLogger.getAttachment(loggerKey);
+            if (cat.parent != null) {
+                parentFound = true;
+                break;
+            }
+        }
+        // If we could not find any existing parents, then link with root.
+        if (!parentFound) cat.parent = root;
     }
 }
 
