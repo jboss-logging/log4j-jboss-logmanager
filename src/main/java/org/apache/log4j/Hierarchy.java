@@ -64,6 +64,7 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
         listeners = new CopyOnWriteArraySet<HierarchyEventListener>();
         context = LogContext.getLogContext();
         this.root = root;
+        AppenderHandler.createAndAttach(root);
         this.root.setHierarchy(this);
         defaultFactory = new DefaultCategoryFactory();
     }

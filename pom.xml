@@ -61,9 +61,16 @@
             <version>1.2.0.GA</version>
         </dependency>
         <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <version>3.1.0.CR2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.8.2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -110,6 +117,10 @@
                         <property>
                             <name>java.util.logging.manager</name>
                             <value>org.jboss.logmanager.LogManager</value>
+                        </property>
+                        <property>
+                            <name>org.jboss.logging.provider</name>
+                            <value>jboss</value>
                         </property>
                     </systemProperties>
                 </configuration>

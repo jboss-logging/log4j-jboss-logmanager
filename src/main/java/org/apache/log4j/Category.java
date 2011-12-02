@@ -68,6 +68,7 @@ public class Category implements AppenderAttachable {
 
     protected Category(String name) {
         this.name = name;
+        AppenderHandler.createAndAttach(this, name);
     }
 
     public synchronized void addAppender(Appender newAppender) {
@@ -79,7 +80,7 @@ public class Category implements AppenderAttachable {
     }
 
     public void assertLog(boolean assertion, String msg) {
-        if (! assertion) error(msg);
+        if (!assertion) error(msg);
     }
 
     public void callAppenders(LoggingEvent event) {
@@ -148,7 +149,7 @@ public class Category implements AppenderAttachable {
      * <p>See {@link #debug(Object)} form for more detailed information.
      *
      * @param message the message object to log.
-     * @param t the exception to log, including its stack trace.
+     * @param t       the exception to log, including its stack trace.
      */
     public void debug(Object message, Throwable t) {
         if (repository.isDisabled(Level.DEBUG_INT)) return;
@@ -182,7 +183,7 @@ public class Category implements AppenderAttachable {
      * <p>See {@link #error(Object)} form for more detailed information.
      *
      * @param message the message object to log.
-     * @param t the exception to log, including its stack trace.
+     * @param t       the exception to log, including its stack trace.
      */
     public void error(Object message, Throwable t) {
         if (repository.isDisabled(Level.ERROR_INT)) return;
@@ -227,7 +228,7 @@ public class Category implements AppenderAttachable {
      * <p>See {@link #fatal(Object)} for more detailed information.
      *
      * @param message the message object to log.
-     * @param t the exception to log, including its stack trace.
+     * @param t       the exception to log, including its stack trace.
      */
     public void fatal(Object message, Throwable t) {
         if (repository.isDisabled(Level.FATAL_INT)) return;
@@ -472,7 +473,7 @@ public class Category implements AppenderAttachable {
      * <p>See {@link #info(Object)} for more detailed information.
      *
      * @param message the message object to log.
-     * @param t the exception to log, including its stack trace.
+     * @param t       the exception to log, including its stack trace.
      */
     public void info(Object message, Throwable t) {
         if (repository.isDisabled(Level.INFO_INT)) return;
@@ -609,9 +610,9 @@ public class Category implements AppenderAttachable {
      * This is the most generic printing method. It is intended to be invoked by <b>wrapper</b> classes.
      *
      * @param callerFQCN The wrapper class' fully qualified class name.
-     * @param level The level of the logging request.
-     * @param message The message of the logging request.
-     * @param t The throwable of the logging request, may be null.
+     * @param level      The level of the logging request.
+     * @param message    The message of the logging request.
+     * @param t          The throwable of the logging request, may be null.
      */
     public void log(String callerFQCN, Priority level, Object message, Throwable t) {
         if (repository.isDisabled(level.level)) {
@@ -678,13 +679,9 @@ public class Category implements AppenderAttachable {
      *
      * @since 0.8.2
      */
-    synchronized
-    public void removeAppender(String name) {
-        if (name == null || aai == null) return;
-        Appender appender = aai.getAppender(name);
-        aai.removeAppender(name);
-        if (appender != null) {
-            fireRemoveAppenderEvent(appender);
+    public synchronized void removeAppender(String name) {
+        if (name != null && aai != null) {
+            removeAppender(aai.getAppender(name));
         }
     }
 
@@ -784,7 +781,7 @@ public class Category implements AppenderAttachable {
      * <p>See {@link #warn(Object)} for more detailed information.
      *
      * @param message the message object to log.
-     * @param t the exception to log, including its stack trace.
+     * @param t       the exception to log, including its stack trace.
      */
     public void warn(Object message, Throwable t) {
         if (repository.isDisabled(Level.WARN_INT)) return;
