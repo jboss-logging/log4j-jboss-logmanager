@@ -101,15 +101,17 @@ public class AppenderHandler extends ExtHandler {
 
     @Override
     protected void doPublish(final ExtLogRecord record) {
-        String name = record.getLoggerName();
-        if (name == null || JBL_ROOT_NAME.equals(name)) {
-            name = LOG4J_ROOT_NAME;
+        String loggerName = record.getLoggerName();
+        if (loggerName == null || JBL_ROOT_NAME.equals(loggerName)) {
+            loggerName = LOG4J_ROOT_NAME;
         }
         synchronized (this.category) {
-            if (name.equals(category.getName())) {
+            if (loggerName.equals(category.getName())) {
                 final LoggingEvent event = new LoggingEventWrapper(record, category);
                 for (Appender appender : AppenderIterator.of(category)) {
-                    appender.doAppend(event);
+                    if (new FilterWrapper(appender.getFilter(), true).isLoggable(record)) {
+                        appender.doAppend(event);
+                    }
                 }
             }
         }
@@ -153,8 +155,7 @@ public class AppenderHandler extends ExtHandler {
     }
 
     /**
-     * Convenience class to use enhanced loops for the appenders of the a {@link Category} and the
-     * {@link org.apache.log4j.spi.RootLogger}.
+     * Convenience class to use enhanced loops for the appenders of the a {@link Category}.
      */
     private static class AppenderIterator implements Iterable<Appender> {
 
@@ -177,8 +178,8 @@ public class AppenderHandler extends ExtHandler {
                     result.addAll(Collections.list(e));
                 }
             }
-            if (category.parent != null) {
-                result.addAll(initAppenders(category.parent));
+            if (category.getParent() != null) {
+                result.addAll(initAppenders(category.getParent()));
             }
             return result;
         }
