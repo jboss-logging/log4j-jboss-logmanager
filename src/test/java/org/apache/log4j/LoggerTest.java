@@ -457,7 +457,6 @@ public class LoggerTest {
     }
 
 
-    @Ignore("The LogManager.resetConfiguration() seems to not increment the remove count.")
     @Test
     public void testAppenderEvent4() {
         CountingHierarchyEventListener listener = new CountingHierarchyEventListener();

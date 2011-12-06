@@ -30,7 +30,6 @@ import java.util.List;
 import org.apache.log4j.spi.LoggingEvent;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -41,6 +40,7 @@ import org.junit.Test;
 public class CategoryLoggerTest {
     private static final String MESSAGE = "This is a test log message.";
     private static final String JBL_MESSAGE = "This is a test from JBL";
+    private static final String JUL_MESSAGE = "This is a test from JUL";
     private static final String ROOT_LOGGER_MSG = "Message from root logger";
     private final Logger log4jLogger = Logger.getLogger(CategoryLoggerTest.class);
     private final Logger root = Logger.getRootLogger();
@@ -67,11 +67,13 @@ public class CategoryLoggerTest {
         log4jLogger.info(MESSAGE);
 
         org.jboss.logging.Logger.getLogger(getClass()).info(JBL_MESSAGE);
+        java.util.logging.Logger.getLogger(getClass().getName()).info(JUL_MESSAGE);
 
-        assertEquals(appender.counter, 2);
-        assertEquals(stringAppender.messages.size(), 2);
+        assertEquals(appender.counter, 3);
+        assertEquals(stringAppender.messages.size(), 3);
         assertEquals(stringAppender.messages.get(0), MESSAGE);
         assertEquals(stringAppender.messages.get(1), JBL_MESSAGE);
+        assertEquals(stringAppender.messages.get(2), JUL_MESSAGE);
     }
 
     @Test
