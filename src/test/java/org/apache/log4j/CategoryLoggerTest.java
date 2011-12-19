@@ -69,11 +69,19 @@ public class CategoryLoggerTest {
         org.jboss.logging.Logger.getLogger(getClass()).info(JBL_MESSAGE);
         java.util.logging.Logger.getLogger(getClass().getName()).info(JUL_MESSAGE);
 
-        assertEquals(appender.counter, 3);
-        assertEquals(stringAppender.messages.size(), 3);
+        final String stringFormat = "This is a %s format test.";
+        org.jboss.logging.Logger.getLogger(getClass()).infof(stringFormat, "string");
+
+        final String msgFormat = "This is a {} format test.";
+        org.jboss.logging.Logger.getLogger(getClass()).infof(stringFormat, "message");
+
+        assertEquals(appender.counter, 5);
+        assertEquals(stringAppender.messages.size(), 5);
         assertEquals(stringAppender.messages.get(0), MESSAGE);
         assertEquals(stringAppender.messages.get(1), JBL_MESSAGE);
         assertEquals(stringAppender.messages.get(2), JUL_MESSAGE);
+        assertFalse(stringFormat.equals(stringAppender.messages.get(3)));
+        assertFalse(msgFormat.equals(stringAppender.messages.get(4)));
     }
 
     @Test

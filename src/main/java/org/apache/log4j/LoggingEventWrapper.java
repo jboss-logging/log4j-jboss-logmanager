@@ -49,7 +49,7 @@ class LoggingEventWrapper extends LoggingEvent {
                 category,
                 record.getMillis(),
                 LevelMapping.getPriorityFor(record.getLevel()),
-                record.getMessage(),
+                record.getFormattedMessage(),
                 record.getThreadName(),
                 record.getThrown() == null ? null : new ThrowableInformation(record.getThrown()),
                 record.getNdc(),
