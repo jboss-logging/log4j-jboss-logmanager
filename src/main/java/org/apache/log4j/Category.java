@@ -31,12 +31,12 @@
 
 package org.apache.log4j;
 
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.Vector;
 
-import org.apache.log4j.helpers.AppenderAttachableImpl;
 import org.apache.log4j.helpers.NullEnumeration;
 import org.apache.log4j.spi.AppenderAttachable;
 import org.apache.log4j.spi.HierarchyEventListener;
@@ -44,34 +44,23 @@ import org.apache.log4j.spi.LoggerRepository;
 import org.apache.log4j.spi.LoggingEvent;
 
 public class Category implements AppenderAttachable {
-
-    protected String name;
-
-    volatile protected Level level;
-
-    volatile protected Category parent;
+    private static final Object LEVEL_LOCK = new Object();
 
     private static final String FQCN = Category.class.getName();
 
-    protected ResourceBundle resourceBundle;
+    protected volatile Level level;
 
-    protected LoggerRepository repository;
+    protected volatile Category parent;
 
-    AppenderAttachableImpl aai;
-
-    protected boolean additive = true;
+    private final org.jboss.logmanager.Logger jblmLogger;
 
     protected Category(String name) {
-        this.name = name;
-        AppenderHandler.createAndAttach(this, name);
+        jblmLogger = LogManagerFacade.getJbossLogger(name);
     }
 
-    public synchronized void addAppender(Appender newAppender) {
-        if (aai == null) {
-            aai = new AppenderAttachableImpl();
-        }
-        aai.addAppender(newAppender);
-        repository.fireAddAppenderEvent(this, newAppender);
+    public void addAppender(Appender newAppender) {
+        AppenderHandler.attachAppender(jblmLogger, newAppender);
+        LogManagerFacade.getLoggerRepository().fireAddAppenderEvent(this, newAppender);
     }
 
     public void assertLog(boolean assertion, String msg) {
@@ -79,23 +68,14 @@ public class Category implements AppenderAttachable {
     }
 
     public void callAppenders(LoggingEvent event) {
-        int writes = 0;
-
-        for (Category c = this; c != null; c = c.parent) {
-            // Protected against simultaneous call to addAppender, removeAppender,...
-            synchronized (c) {
-                if (c.aai != null) {
-                    writes += c.aai.appendLoopOnAppenders(event);
-                }
-                if (!c.additive) {
-                    break;
-                }
-            }
+        final List<Appender> appenders = AppenderHandler.getAllAppenders(jblmLogger);
+        for (Appender appender : appenders) {
+            appender.doAppend(event);
         }
+    }
 
-        if (writes == 0) {
-            repository.emitNoAppenderWarning(this);
-        }
+    org.jboss.logmanager.Logger getJbossLogger() {
+        return jblmLogger;
     }
 
     /**
@@ -103,16 +83,8 @@ public class Category implements AppenderAttachable {
      *
      * @since 1.0
      */
-    synchronized void closeNestedAppenders() {
-        Enumeration enumeration = getAllAppenders();
-        if (enumeration != null) {
-            while (enumeration.hasMoreElements()) {
-                Appender a = (Appender) enumeration.nextElement();
-                if (a instanceof AppenderAttachable) {
-                    a.close();
-                }
-            }
-        }
+    void closeNestedAppenders() {
+        AppenderHandler.closeAppenders(jblmLogger);
     }
 
     /**
@@ -120,7 +92,8 @@ public class Category implements AppenderAttachable {
      * <p/>
      * <p>This method first checks if this category is <code>DEBUG</code> enabled by comparing the level of this
      * category with the {@link org.apache.log4j.Level#DEBUG DEBUG} level. If this category is <code>DEBUG</code>
-     * enabled, then it converts the message object (passed as parameter) to a string by invoking the appropriate {@link
+     * enabled, then it converts the message object (passed as parameter) to a string by invoking the appropriate
+     * {@link
      * org.apache.log4j.or.ObjectRenderer}. It then proceeds to call all the registered appenders in this category and
      * also higher in the hierarchy depending on the value of the additivity flag.
      * <p/>
@@ -131,10 +104,7 @@ public class Category implements AppenderAttachable {
      * @param message the message object to log.
      */
     public void debug(Object message) {
-        if (repository.isDisabled(Level.DEBUG_INT)) return;
-        if (Level.DEBUG.isGreaterOrEqual(getEffectiveLevel())) {
-            forcedLog(FQCN, Level.DEBUG, message, null);
-        }
+        forcedLog(FQCN, Level.DEBUG, message, null);
     }
 
     /**
@@ -147,8 +117,7 @@ public class Category implements AppenderAttachable {
      * @param t       the exception to log, including its stack trace.
      */
     public void debug(Object message, Throwable t) {
-        if (repository.isDisabled(Level.DEBUG_INT)) return;
-        if (Level.DEBUG.isGreaterOrEqual(getEffectiveLevel())) forcedLog(FQCN, Level.DEBUG, message, t);
+        forcedLog(FQCN, Level.DEBUG, message, t);
     }
 
     /**
@@ -167,8 +136,7 @@ public class Category implements AppenderAttachable {
      * @param message the message object to log
      */
     public void error(Object message) {
-        if (repository.isDisabled(Level.ERROR_INT)) return;
-        if (Level.ERROR.isGreaterOrEqual(getEffectiveLevel())) forcedLog(FQCN, Level.ERROR, message, null);
+        forcedLog(FQCN, Level.ERROR, message, null);
     }
 
     /**
@@ -181,19 +149,18 @@ public class Category implements AppenderAttachable {
      * @param t       the exception to log, including its stack trace.
      */
     public void error(Object message, Throwable t) {
-        if (repository.isDisabled(Level.ERROR_INT)) return;
-        if (Level.ERROR.isGreaterOrEqual(getEffectiveLevel())) forcedLog(FQCN, Level.ERROR, message, t);
+        forcedLog(FQCN, Level.ERROR, message, t);
     }
 
     /**
-     * If the named category exists (in the default hierarchy) then it returns a reference to the category, otherwise it
+     * If the named category exists (in the default hierarchy) then it returns a reference to the category, otherwise
+     * it
      * returns <code>null</code>.
      *
      * @since 0.8.5
      * @deprecated Please use {@link org.apache.log4j.LogManager#exists} instead.
      */
-    public
-    static Logger exists(String name) {
+    public static Logger exists(String name) {
         return LogManager.exists(name);
     }
 
@@ -212,8 +179,7 @@ public class Category implements AppenderAttachable {
      * @param message the message object to log
      */
     public void fatal(Object message) {
-        if (repository.isDisabled(Level.FATAL_INT)) return;
-        if (Level.FATAL.isGreaterOrEqual(getEffectiveLevel())) forcedLog(FQCN, Level.FATAL, message, null);
+        forcedLog(FQCN, Level.FATAL, message, null);
     }
 
     /**
@@ -226,22 +192,23 @@ public class Category implements AppenderAttachable {
      * @param t       the exception to log, including its stack trace.
      */
     public void fatal(Object message, Throwable t) {
-        if (repository.isDisabled(Level.FATAL_INT)) return;
-        if (Level.FATAL.isGreaterOrEqual(getEffectiveLevel())) forcedLog(FQCN, Level.FATAL, message, t);
+        forcedLog(FQCN, Level.FATAL, message, t);
     }
 
     /**
      * This method creates a new logging event and logs the event without further checks.
      */
     protected void forcedLog(String fqcn, Priority level, Object message, Throwable t) {
-        callAppenders(new LoggingEvent(fqcn, this, level, message, t));
+        if (jblmLogger.isLoggable(LevelMapping.getLevelFor(level))) {
+            callAppenders(new LoggingEvent(fqcn, this, level, message, t));
+        }
     }
 
     /**
      * Get the additivity flag for this Category instance.
      */
     public boolean getAdditivity() {
-        return additive;
+        return jblmLogger.getUseParentHandlers();
     }
 
     /**
@@ -250,10 +217,12 @@ public class Category implements AppenderAttachable {
      *
      * @return Enumeration An enumeration of the appenders in this category.
      */
-    synchronized
     public Enumeration getAllAppenders() {
-        if (aai == null) return NullEnumeration.getInstance();
-        else return aai.getAllAppenders();
+        final List<Appender> appenders = AppenderHandler.getAppenders(jblmLogger);
+        if (appenders.isEmpty()) {
+            return NullEnumeration.getInstance();
+        }
+        return Collections.enumeration(appenders);
     }
 
     /**
@@ -261,11 +230,8 @@ public class Category implements AppenderAttachable {
      * <p/>
      * <p>Return the appender with that name if in the list. Return <code>null</code> otherwise.
      */
-    synchronized
     public Appender getAppender(String name) {
-        if (aai == null || name == null) return null;
-
-        return aai.getAppender(name);
+        return AppenderHandler.getAppender(jblmLogger, name);
     }
 
     /**
@@ -275,20 +241,14 @@ public class Category implements AppenderAttachable {
      * <p>The Category class is designed so that this method executes as quickly as possible.
      */
     public Level getEffectiveLevel() {
-        for (Category c = this; c != null; c = c.parent) {
-            if (c.level != null) return c.level;
-        }
-        return null; // If reached will cause an NullPointerException.
+        return LevelMapping.getPriorityFor(jblmLogger.getEffectiveLevel());
     }
 
     /**
      * @deprecated Please use the the {@link #getEffectiveLevel} method instead.
      */
     public Priority getChainedPriority() {
-        for (Category c = this; c != null; c = c.parent) {
-            if (c.level != null) return c.level;
-        }
-        return null; // If reached will cause an NullPointerException.
+        return getEffectiveLevel();
     }
 
     /**
@@ -299,8 +259,7 @@ public class Category implements AppenderAttachable {
      *
      * @deprecated Please use {@link org.apache.log4j.LogManager#getCurrentLoggers()} instead.
      */
-    public
-    static Enumeration getCurrentCategories() {
+    public static Enumeration getCurrentCategories() {
         return LogManager.getCurrentLoggers();
     }
 
@@ -310,8 +269,7 @@ public class Category implements AppenderAttachable {
      * @since 1.0
      * @deprecated Please use {@link org.apache.log4j.LogManager#getLoggerRepository()} instead.
      */
-    public
-    static LoggerRepository getDefaultHierarchy() {
+    public static LoggerRepository getDefaultHierarchy() {
         return LogManager.getLoggerRepository();
     }
 
@@ -322,7 +280,7 @@ public class Category implements AppenderAttachable {
      * @deprecated Please use {@link #getLoggerRepository} instead.
      */
     public LoggerRepository getHierarchy() {
-        return repository;
+        return LogManagerFacade.getLoggerRepository();
     }
 
     /**
@@ -331,31 +289,28 @@ public class Category implements AppenderAttachable {
      * @since 1.2
      */
     public LoggerRepository getLoggerRepository() {
-        return repository;
+        return LogManagerFacade.getLoggerRepository();
     }
 
     /**
      * @deprecated Make sure to use {@link org.apache.log4j.Logger#getLogger(String)} instead.
      */
-    public
-    static Category getInstance(String name) {
+    public static Category getInstance(String name) {
         return LogManager.getLogger(name);
     }
 
     /**
      * @deprecated Please make sure to use {@link org.apache.log4j.Logger#getLogger(Class)} instead.
      */
-    public
-    static Category getInstance(Class clazz) {
+    public static Category getInstance(Class clazz) {
         return LogManager.getLogger(clazz);
     }
 
     /**
      * Return the category name.
      */
-    public
-    final String getName() {
-        return name;
+    public final String getName() {
+        return jblmLogger.getName();
     }
 
     /**
@@ -366,8 +321,7 @@ public class Category implements AppenderAttachable {
      *
      * @since 1.2
      */
-    final
-    public Category getParent() {
+    public final Category getParent() {
         return parent;
     }
 
@@ -376,25 +330,29 @@ public class Category implements AppenderAttachable {
      *
      * @return Level - the assigned Level, can be <code>null</code>.
      */
-    final
-    public Level getLevel() {
+    public final Level getLevel() {
+        synchronized (LEVEL_LOCK) {
+            if (level != null) {
+                final Level currentLevel = LevelMapping.getPriorityFor(jblmLogger.getLevel());
+                if (currentLevel.toInt() != level.toInt()) {
+                    jblmLogger.setLevel(LevelMapping.getLevelFor(level));
+                }
+            }
+        }
         return level;
     }
 
     /**
      * @deprecated Please use {@link #getLevel} instead.
      */
-    final
-    public Level getPriority() {
-        return level;
+    public final Level getPriority() {
+        return getLevel();
     }
 
     /**
      * @deprecated Please use {@link org.apache.log4j.Logger#getRootLogger()} instead.
      */
-    final
-    public
-    static Category getRoot() {
+    public static Category getRoot() {
         return LogManager.getRootLogger();
     }
 
@@ -402,17 +360,14 @@ public class Category implements AppenderAttachable {
      * Return the <em>inherited</em> {@link java.util.ResourceBundle} for this category.
      * <p/>
      * <p>This method walks the hierarchy to find the appropriate resource bundle. It will return the resource bundle
-     * attached to the closest ancestor of this category, much like the way priorities are searched. In case there is no
+     * attached to the closest ancestor of this category, much like the way priorities are searched. In case there is
+     * no
      * bundle in the hierarchy then <code>null</code> is returned.
      *
      * @since 0.9.0
      */
     public ResourceBundle getResourceBundle() {
-        for (Category c = this; c != null; c = c.parent) {
-            if (c.resourceBundle != null) return c.resourceBundle;
-        }
-        // It might be the case that there is no resource bundle
-        return null;
+        return jblmLogger.getResourceBundle();
     }
 
     /**
@@ -427,10 +382,6 @@ public class Category implements AppenderAttachable {
         // This is one of the rare cases where we can use logging in order
         // to report errors from within log4j.
         if (rb == null) {
-            //if(!hierarchy.emittedNoResourceBundleWarning) {
-            //error("No resource bundle has been set for category "+name);
-            //hierarchy.emittedNoResourceBundleWarning = true;
-            //}
             return null;
         } else {
             try {
@@ -445,7 +396,8 @@ public class Category implements AppenderAttachable {
     /**
      * Log a message object with the {@link org.apache.log4j.Level#INFO INFO} Level.
      * <p/>
-     * <p>This method first checks if this category is <code>INFO</code> enabled by comparing the level of this category
+     * <p>This method first checks if this category is <code>INFO</code> enabled by comparing the level of this
+     * category
      * with {@link org.apache.log4j.Level#INFO INFO} Level. If the category is <code>INFO</code> enabled, then it
      * converts the message object passed as parameter to a string by invoking the appropriate {@link
      * org.apache.log4j.or.ObjectRenderer}. It proceeds to call all the registered appenders in this category and also
@@ -457,8 +409,7 @@ public class Category implements AppenderAttachable {
      * @param message the message object to log
      */
     public void info(Object message) {
-        if (repository.isDisabled(Level.INFO_INT)) return;
-        if (Level.INFO.isGreaterOrEqual(getEffectiveLevel())) forcedLog(FQCN, Level.INFO, message, null);
+        forcedLog(FQCN, Level.INFO, message, null);
     }
 
     /**
@@ -471,18 +422,14 @@ public class Category implements AppenderAttachable {
      * @param t       the exception to log, including its stack trace.
      */
     public void info(Object message, Throwable t) {
-        if (repository.isDisabled(Level.INFO_INT)) return;
-        if (Level.INFO.isGreaterOrEqual(getEffectiveLevel())) forcedLog(FQCN, Level.INFO, message, t);
+        forcedLog(FQCN, Level.INFO, message, t);
     }
 
     /**
      * Is the appender passed as parameter attached to this category?
      */
     public boolean isAttached(Appender appender) {
-        if (appender == null || aai == null) return false;
-        else {
-            return aai.isAttached(appender);
-        }
+        return AppenderHandler.isAppenderAttached(jblmLogger, appender);
     }
 
     /**
@@ -495,7 +442,8 @@ public class Category implements AppenderAttachable {
      *      cat.debug("This is entry number: " + i );
      *  </pre>
      *
-     * <p>You incur the cost constructing the message, concatenatiion in this case, regardless of whether the message is
+     * <p>You incur the cost constructing the message, concatenatiion in this case, regardless of whether the message
+     * is
      * logged or not.
      *
      * <p>If you are worried about speed, then you should write
@@ -507,14 +455,14 @@ public class Category implements AppenderAttachable {
      *
      * <p>This way you will not incur the cost of parameter construction if debugging is disabled for <code>cat</code>.
      * On the other hand, if the <code>cat</code> is debug enabled, you will incur the cost of evaluating whether the
-     * category is debug enabled twice. Once in <code>isDebugEnabled</code> and once in the <code>debug</code>.  This is
+     * category is debug enabled twice. Once in <code>isDebugEnabled</code> and once in the <code>debug</code>.  This
+     * is
      * an insignificant overhead since evaluating a category takes about 1%% of the time it takes to actually log.
      *
      * @return boolean - <code>true</code> if this category is debug enabled, <code>false</code> otherwise.
      */
     public boolean isDebugEnabled() {
-        if (repository.isDisabled(Level.DEBUG_INT)) return false;
-        return Level.DEBUG.isGreaterOrEqual(getEffectiveLevel());
+        return jblmLogger.isLoggable(org.jboss.logmanager.Level.DEBUG);
     }
 
     /**
@@ -525,8 +473,7 @@ public class Category implements AppenderAttachable {
      * @return boolean True if this category is enabled for <code>level</code>.
      */
     public boolean isEnabledFor(Priority level) {
-        if (repository.isDisabled(level.level)) return false;
-        return level.isGreaterOrEqual(getEffectiveLevel());
+        return jblmLogger.isLoggable(LevelMapping.getLevelFor(level));
     }
 
     /**
@@ -535,8 +482,7 @@ public class Category implements AppenderAttachable {
      * @return boolean - <code>true</code> if this category is enabled for level info, <code>false</code> otherwise.
      */
     public boolean isInfoEnabled() {
-        if (repository.isDisabled(Level.INFO_INT)) return false;
-        return Level.INFO.isGreaterOrEqual(getEffectiveLevel());
+        return jblmLogger.isLoggable(org.jboss.logmanager.Level.INFO);
     }
 
     /**
@@ -547,10 +493,7 @@ public class Category implements AppenderAttachable {
      * @since 0.8.4
      */
     public void l7dlog(Priority priority, String key, Throwable t) {
-        if (repository.isDisabled(priority.level)) {
-            return;
-        }
-        if (priority.isGreaterOrEqual(getEffectiveLevel())) {
+        if (jblmLogger.isLoggable(LevelMapping.getLevelFor(priority))) {
             String msg = getResourceBundleString(key);
             // if message corresponding to 'key' could not be found in the
             // resource bundle, then default to 'key'.
@@ -569,10 +512,7 @@ public class Category implements AppenderAttachable {
      * @since 0.8.4
      */
     public void l7dlog(Priority priority, String key, Object[] params, Throwable t) {
-        if (repository.isDisabled(priority.level)) {
-            return;
-        }
-        if (priority.isGreaterOrEqual(getEffectiveLevel())) {
+        if (jblmLogger.isLoggable(LevelMapping.getLevelFor(priority))) {
             String pattern = getResourceBundleString(key);
             String msg;
             if (pattern == null) msg = key;
@@ -585,20 +525,14 @@ public class Category implements AppenderAttachable {
      * This generic form is intended to be used by wrappers.
      */
     public void log(Priority priority, Object message, Throwable t) {
-        if (repository.isDisabled(priority.level)) {
-            return;
-        }
-        if (priority.isGreaterOrEqual(getEffectiveLevel())) forcedLog(FQCN, priority, message, t);
+        forcedLog(FQCN, priority, message, t);
     }
 
     /**
      * This generic form is intended to be used by wrappers.
      */
     public void log(Priority priority, Object message) {
-        if (repository.isDisabled(priority.level)) {
-            return;
-        }
-        if (priority.isGreaterOrEqual(getEffectiveLevel())) forcedLog(FQCN, priority, message, null);
+        forcedLog(FQCN, priority, message, null);
     }
 
     /**
@@ -610,12 +544,7 @@ public class Category implements AppenderAttachable {
      * @param t          The throwable of the logging request, may be null.
      */
     public void log(String callerFQCN, Priority level, Object message, Throwable t) {
-        if (repository.isDisabled(level.level)) {
-            return;
-        }
-        if (level.isGreaterOrEqual(getEffectiveLevel())) {
-            forcedLog(callerFQCN, level, message, t);
-        }
+        forcedLog(callerFQCN, level, message, t);
     }
 
     /**
@@ -624,7 +553,7 @@ public class Category implements AppenderAttachable {
      *
      * @param appender appender, may be null.
      */
-    private void fireRemoveAppenderEvent(final Appender appender) {
+    private void fireRemoveAppenderEvent(final LoggerRepository repository, final Appender appender) {
         if (appender != null) {
             if (repository instanceof Hierarchy) {
                 ((Hierarchy) repository).fireRemoveAppenderEvent(this, appender);
@@ -639,18 +568,11 @@ public class Category implements AppenderAttachable {
      * <p/>
      * <p>This is useful when re-reading configuration information.
      */
-    synchronized
     public void removeAllAppenders() {
-        if (aai != null) {
-            Vector appenders = new Vector();
-            for (Enumeration iter = aai.getAllAppenders(); iter != null && iter.hasMoreElements(); ) {
-                appenders.add(iter.nextElement());
-            }
-            aai.removeAllAppenders();
-            for (Enumeration iter = appenders.elements(); iter.hasMoreElements(); ) {
-                fireRemoveAppenderEvent((Appender) iter.nextElement());
-            }
-            aai = null;
+        final List<Appender> removedAppenders = AppenderHandler.removeAllAppenders(jblmLogger);
+        final LoggerRepository repository = LogManagerFacade.getLoggerRepository();
+        for (Appender appender : removedAppenders) {
+            fireRemoveAppenderEvent(repository, appender);
         }
     }
 
@@ -659,13 +581,11 @@ public class Category implements AppenderAttachable {
      *
      * @since 0.8.2
      */
-    synchronized
     public void removeAppender(Appender appender) {
-        if (appender == null || aai == null) return;
-        boolean wasAttached = aai.isAttached(appender);
-        aai.removeAppender(appender);
-        if (wasAttached) {
-            fireRemoveAppenderEvent(appender);
+        if (appender != null) {
+            if (AppenderHandler.removeAppender(jblmLogger, appender)) {
+                fireRemoveAppenderEvent(LogManagerFacade.getLoggerRepository(), appender);
+            }
         }
     }
 
@@ -674,9 +594,9 @@ public class Category implements AppenderAttachable {
      *
      * @since 0.8.2
      */
-    public synchronized void removeAppender(String name) {
-        if (name != null && aai != null) {
-            removeAppender(aai.getAppender(name));
+    public void removeAppender(String name) {
+        if (name != null) {
+            removeAppender(AppenderHandler.getAppender(jblmLogger, name));
         }
     }
 
@@ -686,19 +606,20 @@ public class Category implements AppenderAttachable {
      * @since 0.8.1
      */
     public void setAdditivity(boolean additive) {
-        this.additive = additive;
+        jblmLogger.setUseParentHandlers(additive);
     }
 
     /**
      * Only the Hiearchy class can set the hiearchy of a category. Default package access is MANDATORY here.
      */
     final void setHierarchy(LoggerRepository repository) {
-        this.repository = repository;
+        // no-op
     }
 
     /**
      * Set the level of this Category. If you are passing any of <code>Level.DEBUG</code>, <code>Level.INFO</code>,
-     * <code>Level.WARN</code>, <code>Level.ERROR</code>, <code>Level.FATAL</code> as a parameter, you need to case them
+     * <code>Level.WARN</code>, <code>Level.ERROR</code>, <code>Level.FATAL</code> as a parameter, you need to case
+     * them
      * as Level.
      * <p/>
      * <p>As in <pre> &nbsp;&nbsp;&nbsp;logger.setLevel((Level) Level.DEBUG); </pre>
@@ -707,7 +628,10 @@ public class Category implements AppenderAttachable {
      * <p>Null values are admitted.
      */
     public void setLevel(Level level) {
-        this.level = level;
+        synchronized (LEVEL_LOCK) {
+            jblmLogger.setLevel(LevelMapping.getLevelFor(level));
+            this.level = level;
+        }
     }
 
     /**
@@ -718,7 +642,7 @@ public class Category implements AppenderAttachable {
      * @deprecated Please use {@link #setLevel} instead.
      */
     public void setPriority(Priority priority) {
-        level = (Level) priority;
+        setLevel((Level) priority);
     }
 
     /**
@@ -728,7 +652,7 @@ public class Category implements AppenderAttachable {
      * @since 0.8.4
      */
     public void setResourceBundle(ResourceBundle bundle) {
-        resourceBundle = bundle;
+        // no-op
     }
 
     /**
@@ -744,15 +668,15 @@ public class Category implements AppenderAttachable {
      * @since 1.0
      * @deprecated Please use {@link org.apache.log4j.LogManager#shutdown()} instead.
      */
-    public
-    static void shutdown() {
+    public static void shutdown() {
         LogManager.shutdown();
     }
 
     /**
      * Log a message object with the {@link org.apache.log4j.Level#WARN WARN} Level.
      * <p/>
-     * <p>This method first checks if this category is <code>WARN</code> enabled by comparing the level of this category
+     * <p>This method first checks if this category is <code>WARN</code> enabled by comparing the level of this
+     * category
      * with {@link org.apache.log4j.Level#WARN WARN} Level. If the category is <code>WARN</code> enabled, then it
      * converts the message object passed as parameter to a string by invoking the appropriate {@link
      * org.apache.log4j.or.ObjectRenderer}. It proceeds to call all the registered appenders in this category and also
@@ -764,9 +688,7 @@ public class Category implements AppenderAttachable {
      * @param message the message object to log.
      */
     public void warn(Object message) {
-        if (repository.isDisabled(Level.WARN_INT)) return;
-
-        if (Level.WARN.isGreaterOrEqual(getEffectiveLevel())) forcedLog(FQCN, Level.WARN, message, null);
+        forcedLog(FQCN, Level.WARN, message, null);
     }
 
     /**
@@ -779,7 +701,6 @@ public class Category implements AppenderAttachable {
      * @param t       the exception to log, including its stack trace.
      */
     public void warn(Object message, Throwable t) {
-        if (repository.isDisabled(Level.WARN_INT)) return;
-        if (Level.WARN.isGreaterOrEqual(getEffectiveLevel())) forcedLog(FQCN, Level.WARN, message, t);
+        forcedLog(FQCN, Level.WARN, message, t);
     }
 }

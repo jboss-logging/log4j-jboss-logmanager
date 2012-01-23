@@ -19,12 +19,20 @@ package org.apache.log4j.defaultInit;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.log4j.TestLogContextSelector;
+import org.jboss.logmanager.LogContext;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
 public class TestCase1 {
+
+    @BeforeClass
+    public static void setUpLogContext() {
+        LogContext.setLogContextSelector(TestLogContextSelector.forClass(TestCase1.class));
+    }
 
     @After
     public void tearDown() {

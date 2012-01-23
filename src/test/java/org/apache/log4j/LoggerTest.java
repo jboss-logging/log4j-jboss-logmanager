@@ -27,8 +27,10 @@ import org.apache.log4j.spi.HierarchyEventListener;
 import org.apache.log4j.spi.LoggerRepository;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.spi.RootLogger;
+import org.jboss.logmanager.LogContext;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -38,6 +40,11 @@ import org.junit.Test;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class LoggerTest {
+
+    @BeforeClass
+    public static void setUpLogContext() {
+        LogContext.setLogContextSelector(TestLogContextSelector.forClass(LoggerTest.class));
+    }
 
     private Logger logger;
     private Appender a1;
@@ -292,6 +299,7 @@ public class LoggerTest {
     }
 
 
+    @Ignore("Setting resource bundles is not supported")
     @Test
     public void testRB1() {
         logger = Logger.getRootLogger();
@@ -311,6 +319,7 @@ public class LoggerTest {
         assertSame(t, rbUS);
     }
 
+    @Ignore("Setting resource bundles is not supported")
     @Test
     public void testRB2() {
         logger = Logger.getRootLogger();
@@ -331,7 +340,7 @@ public class LoggerTest {
         assertSame(t, rbFR);
     }
 
-
+    @Ignore("Setting resource bundles is not supported")
     @Test
     public void testRB3() {
         logger = Logger.getRootLogger();
@@ -451,7 +460,7 @@ public class LoggerTest {
         assertEquals(1, listener.getRemoveEventCount());
     }
 
-
+    @Ignore("At this point resetting the LogManager does nothing.")
     @Test
     public void testAppenderEvent4() {
         CountingHierarchyEventListener listener = new CountingHierarchyEventListener();

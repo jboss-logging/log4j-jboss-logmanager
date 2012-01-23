@@ -32,6 +32,7 @@ import org.jboss.logmanager.ExtLogRecord;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 class LoggingEventWrapper extends LoggingEvent {
+    private static final String RECORD_KEY = "org.jboss.logmanager.record";
 
     /**
      * Creates a new logging event.
@@ -49,7 +50,7 @@ class LoggingEventWrapper extends LoggingEvent {
                 record.getThrown() == null ? null : new ThrowableInformation(record.getThrown()),
                 record.getNdc(),
                 new LocationInfo(new Throwable(), record.getLoggerClassName()),
-                Collections.singletonMap("org.jboss.logmanager.record", record));
+                Collections.singletonMap(RECORD_KEY, record));
     }
 
     /**
@@ -61,7 +62,7 @@ class LoggingEventWrapper extends LoggingEvent {
      * @return the log record
      */
     public static ExtLogRecord getLogRecordFor(LoggingEvent event) {
-        final ExtLogRecord rec = (ExtLogRecord) event.getProperties().get("org.jboss.logmanager.record");
+        final ExtLogRecord rec = (ExtLogRecord) event.getProperties().get(RECORD_KEY);
         if (rec != null) {
             return rec;
         }

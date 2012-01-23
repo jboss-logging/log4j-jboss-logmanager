@@ -17,7 +17,6 @@
 
 package org.apache.log4j;
 
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
@@ -31,6 +30,9 @@ import java.util.Map;
  */
 class LevelMapping {
 
+    public static final org.jboss.logmanager.Level DEFAULT_LEVEL = org.jboss.logmanager.Level.DEBUG;
+    public static final Level DEFAULT_LOG4J_LEVEL = Level.DEBUG;
+
     private static final Map<java.util.logging.Level, Level> priorityMap;
 
     private LevelMapping() {
@@ -38,13 +40,13 @@ class LevelMapping {
 
     static {
         final Map<java.util.logging.Level, Level> map = new IdentityHashMap<java.util.logging.Level, Level>();
-        map.put(java.util.logging.Level.SEVERE, Log4jJDKLevel.SEVERE);
-        map.put(java.util.logging.Level.WARNING, Log4jJDKLevel.WARNING);
-        map.put(java.util.logging.Level.CONFIG, Log4jJDKLevel.CONFIG);
-        map.put(java.util.logging.Level.INFO, Log4jJDKLevel.INFO);
-        map.put(java.util.logging.Level.FINE, Log4jJDKLevel.FINE);
-        map.put(java.util.logging.Level.FINER, Log4jJDKLevel.FINER);
-        map.put(java.util.logging.Level.FINEST, Log4jJDKLevel.FINEST);
+        map.put(java.util.logging.Level.SEVERE, Level.ERROR);
+        map.put(java.util.logging.Level.WARNING, Level.WARN);
+        map.put(java.util.logging.Level.CONFIG, Level.DEBUG);
+        map.put(java.util.logging.Level.INFO, Level.INFO);
+        map.put(java.util.logging.Level.FINE, Level.DEBUG);
+        map.put(java.util.logging.Level.FINER, Level.DEBUG);
+        map.put(java.util.logging.Level.FINEST, Level.TRACE);
 
         map.put(org.jboss.logmanager.Level.FATAL, Level.FATAL);
         map.put(org.jboss.logmanager.Level.ERROR, Level.ERROR);
@@ -64,7 +66,24 @@ class LevelMapping {
      */
     static Level getPriorityFor(java.util.logging.Level level) {
         final Level p;
-        return (p = priorityMap.get(level)) == null ? Level.DEBUG : p;
+        return (p = priorityMap.get(level)) == null ? DEFAULT_LOG4J_LEVEL : p;
+    }
+
+    /**
+     * Finds the {@link Level log4j level} for the {@code level}.
+     *
+     * @param level the JUL logging level.
+     *
+     * @return the log4j logging level or {@code null} if it cold not be found.
+     */
+    static Level getPriorityFor(int level) {
+        final Level p;
+        for (java.util.logging.Level l : priorityMap.keySet()) {
+            if (l.intValue() == level) {
+                return priorityMap.get(l);
+            }
+        }
+        return DEFAULT_LOG4J_LEVEL;
     }
 
     /**
@@ -74,8 +93,13 @@ class LevelMapping {
      *
      * @return the jboss-log-manager level or by default {@link org.jboss.logmanager.Level#DEBUG}.
      */
-    static org.jboss.logmanager.Level getLevelFor(Priority level) {
+    static java.util.logging.Level getLevelFor(Priority level) {
+        if (level == null) {
+            return DEFAULT_LEVEL;
+        }
         switch (level.toInt()) {
+            case Level.ALL_INT:
+                return org.jboss.logmanager.Level.ALL;
             case Level.TRACE_INT:
                 return org.jboss.logmanager.Level.TRACE;
             case Level.DEBUG_INT:
@@ -88,91 +112,10 @@ class LevelMapping {
                 return org.jboss.logmanager.Level.ERROR;
             case Level.FATAL_INT:
                 return org.jboss.logmanager.Level.FATAL;
+            case Level.OFF_INT:
+                return org.jboss.logmanager.Level.OFF;
             default:
-                return org.jboss.logmanager.Level.DEBUG;
-        }
-    }
-
-    private static class Log4jJDKLevel extends Level {
-
-        private static final long serialVersionUID = -2456662804627419121L;
-
-        /**
-         * Instantiate a Level object.
-         */
-        protected Log4jJDKLevel(int level, String levelStr, int syslogEquivalent) {
-            super(level, levelStr, syslogEquivalent);
-        }
-
-        /**
-         * A mapping of the JDK logging {@link java.util.logging.Level#SEVERE SEVERE} level; numerically
-         * equivalent to log4j's {@link Level#ERROR ERROR} level.
-         */
-        public static final Level SEVERE = new Log4jJDKLevel(Level.ERROR_INT, "SEVERE", 3);
-
-        /**
-         * A mapping of the JDK logging {@link java.util.logging.Level#WARNING WARNING} level; numerically
-         * equivalent to log4j's {@link Level#WARN WARN} level.
-         */
-        public static final Level WARNING = new Log4jJDKLevel(Level.WARN_INT, "WARNING", 4);
-
-        /**
-         * A mapping of the JDK logging {@link java.util.logging.Level#INFO INFO} level; numerically
-         * equivalent to log4j's {@link Level#INFO INFO} level.
-         */
-        public static final Level INFO = new Log4jJDKLevel(Level.INFO_INT, "INFO", 5);
-
-        /**
-         * A mapping of the JDK logging {@link java.util.logging.Level#CONFIG CONFIG} level; numerically
-         * falls between log4j's {@link Level#INFO INFO} and {@link Level#DEBUG DEBUG} levels.
-         */
-        public static final Level CONFIG = new Log4jJDKLevel(Level.INFO_INT - 5000, "CONFIG", 6);
-
-        /**
-         * A mapping of the JDK logging {@link java.util.logging.Level#FINE FINE} level; numerically
-         * equivalent to log4j's {@link Level#DEBUG DEBUG} level.
-         */
-        public static final Level FINE = new Log4jJDKLevel(Level.DEBUG_INT, "FINE", 7);
-
-        /**
-         * A mapping of the JDK logging {@link java.util.logging.Level#FINER FINER} level; numerically
-         * falls between log4j's {@link Level#DEBUG DEBUG} and {@link Level#TRACE TRACE} levels.
-         */
-        public static final Level FINER = new Log4jJDKLevel(Level.DEBUG_INT - 2500, "FINER", 7);
-
-        /**
-         * A mapping of the JDK logging {@link java.util.logging.Level#FINEST FINEST} level; numerically
-         * equivalent to log4j's {@link Level#TRACE TRACE} level.
-         */
-        public static final Level FINEST = new Log4jJDKLevel(Level.TRACE_INT, "FINEST", 7);
-
-        private static final Map<String, Level> levelMapping = new HashMap<String, Level>();
-
-        private static void add(Level lvl) {
-            levelMapping.put(lvl.toString(), lvl);
-        }
-
-        static {
-            add(SEVERE);
-            add(WARNING);
-            add(INFO);
-            add(CONFIG);
-            add(FINE);
-            add(FINER);
-            add(FINEST);
-        }
-
-        /**
-         * Get the level for the given name. If the level is not one of the levels defined in this class,
-         * this method delegates to {@link Level#toLevel(String) toLevel(String)} on the superclass.
-         *
-         * @param name the level name
-         *
-         * @return the equivalent level
-         */
-        public static Level toLevel(String name) {
-            final Level level = levelMapping.get(name.trim().toUpperCase());
-            return level != null ? level : Level.toLevel(name);
+                return DEFAULT_LEVEL;
         }
     }
 }

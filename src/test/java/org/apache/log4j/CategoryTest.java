@@ -97,7 +97,6 @@ public class CategoryTest {
      */
     public MockCategory(final String name) {
       super(name);
-      repository = new Hierarchy(this);
     }
 
     /**

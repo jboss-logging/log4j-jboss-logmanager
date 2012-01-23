@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.spi.LoggingEvent;
-import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -40,14 +40,14 @@ public class CategoryLoggerTest {
     private final Logger log4jLogger = Logger.getLogger(CategoryLoggerTest.class);
     private final Logger root = Logger.getRootLogger();
 
-    @Before
-    public void setUp() {
+    @BeforeClass
+    public static void setUp() {
         // Uncomment to see output
         BasicConfigurator.configure();
     }
 
-    @After
-    public void cleanUp() {
+    @Before
+    public void clearAppenders() {
         log4jLogger.removeAllAppenders();
         root.removeAllAppenders();
     }
@@ -70,11 +70,11 @@ public class CategoryLoggerTest {
         final String msgFormat = "This is a {} format test.";
         org.jboss.logging.Logger.getLogger(getClass()).infof(stringFormat, "message");
 
-        assertEquals(appender.counter, 5);
-        assertEquals(stringAppender.messages.size(), 5);
-        assertEquals(stringAppender.messages.get(0), MESSAGE);
-        assertEquals(stringAppender.messages.get(1), JBL_MESSAGE);
-        assertEquals(stringAppender.messages.get(2), JUL_MESSAGE);
+        assertEquals(5, appender.counter);
+        assertEquals(5, stringAppender.messages.size());
+        assertEquals(MESSAGE, stringAppender.messages.get(0));
+        assertEquals(JBL_MESSAGE, stringAppender.messages.get(1));
+        assertEquals(JUL_MESSAGE, stringAppender.messages.get(2));
         assertFalse(stringFormat.equals(stringAppender.messages.get(3)));
         assertFalse(msgFormat.equals(stringAppender.messages.get(4)));
     }
@@ -93,13 +93,13 @@ public class CategoryLoggerTest {
 
         org.jboss.logging.Logger.getLogger(getClass()).info(JBL_MESSAGE);
 
-        assertEquals(appender.counter, 3);
-        assertEquals(stringAppender.messages.size(), 5);
-        assertEquals(stringAppender.messages.get(0), ROOT_LOGGER_MSG);
-        assertEquals(stringAppender.messages.get(1), MESSAGE);
-        assertEquals(stringAppender.messages.get(2), MESSAGE);
-        assertEquals(stringAppender.messages.get(3), JBL_MESSAGE);
-        assertEquals(stringAppender.messages.get(4), JBL_MESSAGE);
+        assertEquals(3, appender.counter);
+        assertEquals(5, stringAppender.messages.size());
+        assertEquals(ROOT_LOGGER_MSG, stringAppender.messages.get(0));
+        assertEquals(MESSAGE, stringAppender.messages.get(1));
+        assertEquals(MESSAGE, stringAppender.messages.get(2));
+        assertEquals(JBL_MESSAGE, stringAppender.messages.get(3));
+        assertEquals(JBL_MESSAGE, stringAppender.messages.get(4));
     }
 
     @Test
@@ -112,14 +112,14 @@ public class CategoryLoggerTest {
         root.info(ROOT_LOGGER_MSG);
 
         final String msg = JBL_MESSAGE + " root logger";
-        org.jboss.logmanager.Logger.getLogger(AppenderHandler.JBL_ROOT_NAME).info(msg);
-        org.jboss.logging.Logger.getLogger(AppenderHandler.JBL_ROOT_NAME).info(msg);
+        org.jboss.logmanager.Logger.getLogger(LogManagerFacade.JBL_ROOT_NAME).info(msg);
+        org.jboss.logging.Logger.getLogger(LogManagerFacade.JBL_ROOT_NAME).info(msg);
 
-        assertEquals(appender.counter, 3);
-        assertEquals(stringAppender.messages.size(), 3);
-        assertEquals(stringAppender.messages.get(0), ROOT_LOGGER_MSG);
-        assertEquals(stringAppender.messages.get(1), msg);
-        assertEquals(stringAppender.messages.get(2), msg);
+        assertEquals(3, appender.counter);
+        assertEquals(3, stringAppender.messages.size());
+        assertEquals(ROOT_LOGGER_MSG, stringAppender.messages.get(0));
+        assertEquals(msg, stringAppender.messages.get(1));
+        assertEquals(msg, stringAppender.messages.get(2));
     }
 
     private static class CountingAppender extends AbstractAppender {

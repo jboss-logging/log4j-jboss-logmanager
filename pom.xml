@@ -91,6 +91,7 @@
                                         <exclude>META-INF/**</exclude>
                                         <exclude>org/apache/log4j/Hierarchy.class</exclude>
                                         <exclude>org/apache/log4j/Category.class</exclude>
+                                        <exclude>org/apache/log4j/Logger.class</exclude>
                                     </excludes>
                                 </filter>
                             </filters>

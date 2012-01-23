@@ -21,10 +21,13 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.TestLogContextSelector;
 import org.apache.log4j.util.Paths;
 import org.apache.log4j.xml.DOMConfigurator;
+import org.jboss.logmanager.LogContext;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Enumeration;
@@ -33,6 +36,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class TestCase4 {
+
+    @BeforeClass
+    public static void setUpLogContext() {
+        LogContext.setLogContextSelector(TestLogContextSelector.forClass(TestCase4.class));
+    }
 
     @Before
     public void setUp() {
