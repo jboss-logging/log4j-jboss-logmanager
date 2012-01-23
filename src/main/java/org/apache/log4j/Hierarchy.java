@@ -20,11 +20,23 @@ package org.apache.log4j;
 import org.apache.log4j.helpers.LogLog;
 import org.apache.log4j.or.ObjectRenderer;
 import org.apache.log4j.or.RendererMap;
-import org.apache.log4j.spi.*;
-import org.jboss.logmanager.LogContext;
+import org.apache.log4j.spi.HierarchyEventListener;
+import org.apache.log4j.spi.LoggerFactory;
+import org.apache.log4j.spi.LoggerRepository;
+import org.apache.log4j.spi.RendererSupport;
+import org.apache.log4j.spi.ThrowableRenderer;
+import org.apache.log4j.spi.ThrowableRendererSupport;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Set;
+
 import java.util.concurrent.CopyOnWriteArraySet;
+
+import org.jboss.logmanager.LogContext;
 
 import static org.jboss.logmanager.Logger.AttachmentKey;
 
