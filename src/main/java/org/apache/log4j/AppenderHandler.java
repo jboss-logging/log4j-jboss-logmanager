@@ -22,6 +22,7 @@ import static org.apache.log4j.LogManagerFacade.JBL_ROOT_NAME;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Formatter;
 
 import org.apache.log4j.spi.AppenderAttachable;
@@ -41,8 +42,7 @@ import org.jboss.logmanager.Logger;
  */
 final class AppenderHandler extends ExtHandler {
 
-    private static final Object APPENDER_LOCK = new Object();
-    private static final org.jboss.logmanager.Logger.AttachmentKey<List<Appender>> APPENDERS_KEY = new org.jboss.logmanager.Logger.AttachmentKey<List<Appender>>();
+    private static final org.jboss.logmanager.Logger.AttachmentKey<CopyOnWriteArrayList<Appender>> APPENDERS_KEY = new org.jboss.logmanager.Logger.AttachmentKey<CopyOnWriteArrayList<Appender>>();
 
     private final Logger logger;
 
@@ -65,11 +65,9 @@ final class AppenderHandler extends ExtHandler {
     public void setFormatter(final Formatter newFormatter) throws SecurityException {
         super.setFormatter(newFormatter);
         final FormatterLayout layout = new FormatterLayout(newFormatter);
-        synchronized (APPENDER_LOCK) {
-            final List<Appender> appenders = getAllAppenders(logger);
-            for (Appender appender : appenders) {
-                appender.setLayout(layout);
-            }
+        final List<Appender> appenders = getAllAppenders(logger);
+        for (Appender appender : appenders) {
+            appender.setLayout(layout);
         }
     }
 
@@ -81,12 +79,10 @@ final class AppenderHandler extends ExtHandler {
         }
         if (loggerName.equals(logger.getName())) {
             final LoggingEvent event = new LoggingEventWrapper(record, LogManagerFacade.getLogger(logger));
-            synchronized (APPENDER_LOCK) {
-                final List<Appender> appenders = getAllAppenders(logger);
-                for (Appender appender : appenders) {
-                    if (new FilterWrapper(appender.getFilter(), true).isLoggable(record)) {
-                        appender.doAppend(event);
-                    }
+            final List<Appender> appenders = getAllAppenders(logger);
+            for (Appender appender : appenders) {
+                if (new FilterWrapper(appender.getFilter(), true).isLoggable(record)) {
+                    appender.doAppend(event);
                 }
             }
         }
@@ -134,19 +130,7 @@ final class AppenderHandler extends ExtHandler {
      * @param appender the appender to attach.
      */
     public static void attachAppender(final Logger logger, final Appender appender) {
-        List<Appender> appenders = logger.getAttachment(APPENDERS_KEY);
-        if (appenders == null) {
-            appenders = new ArrayList<Appender>();
-            final List<Appender> current = logger.attachIfAbsent(APPENDERS_KEY, appenders);
-            if (current != null) {
-                appenders = current;
-            }
-        }
-        synchronized (APPENDER_LOCK) {
-            if (!appenders.contains(appender)) {
-                appenders.add(appender);
-            }
-        }
+        getAppenderList(logger).addIfAbsent(appender);
     }
 
     /**
@@ -157,9 +141,9 @@ final class AppenderHandler extends ExtHandler {
      * @return a collection of the appenders.
      */
     public static List<Appender> getAppenders(final Logger logger) {
-        List<Appender> appenders = logger.getAttachment(APPENDERS_KEY);
+        List<Appender> appenders = getAppenderList(logger);
         if (appenders == null) {
-            return new ArrayList<Appender>();
+            return Collections.emptyList();
         }
         return new ArrayList<Appender>(appenders);
     }
@@ -174,14 +158,27 @@ final class AppenderHandler extends ExtHandler {
      * @return a collection of the appenders or an empty collection.
      */
     public static List<Appender> getAllAppenders(final Logger logger) {
-        final List<Appender> result = getAppenders(logger);
+        final List<Appender> result = new ArrayList<Appender>();
+        getAllAppenders(logger, result);
+        return result;
+    }
+
+    /**
+     * Retrieves all the appenders that are associated with the logger and any parent loggers. If the {@link
+     * org.jboss.logmanager.Logger#getUseParentHandlers()} returns {@code false}, the chain is broken and no more
+     * appenders are returned.
+     *
+     * @param logger the logger to retrieve the appenders on.
+     * @param result the list that will have the appenders added to it.
+     */
+    static void getAllAppenders(final Logger logger, final List<Appender> result) {
+        result.addAll(getAppenderList(logger));
         if (logger.getUseParentHandlers()) {
             final Category category = LogManagerFacade.getLogger(logger);
             if (category != null && category.getParent() != null) {
-                result.addAll(getAllAppenders(category.getParent().getJbossLogger()));
+                getAllAppenders(category.getParent().getJbossLogger(), result);
             }
         }
-        return result;
     }
 
     /**
@@ -227,12 +224,10 @@ final class AppenderHandler extends ExtHandler {
      */
     public static List<Appender> removeAllAppenders(final Logger logger) {
         List<Appender> result = Collections.emptyList();
-        synchronized (APPENDER_LOCK) {
-            final List<Appender> currentAppenders = logger.getAttachment(APPENDERS_KEY);
-            if (currentAppenders != null && !currentAppenders.isEmpty()) {
-                result = new ArrayList<Appender>(currentAppenders);
-                currentAppenders.clear();
-            }
+        final List<Appender> currentAppenders = getAppenderList(logger);
+        if (currentAppenders != null && !currentAppenders.isEmpty()) {
+            result = new ArrayList<Appender>(currentAppenders);
+            currentAppenders.clear();
         }
         return result;
     }
@@ -247,11 +242,9 @@ final class AppenderHandler extends ExtHandler {
      */
     public static boolean removeAppender(final Logger logger, final Appender appender) {
         boolean result = false;
-        synchronized (APPENDER_LOCK) {
-            final List<Appender> currentAppenders = logger.getAttachment(APPENDERS_KEY);
-            if (currentAppenders != null) {
-                result = currentAppenders.remove(appender);
-            }
+        final List<Appender> currentAppenders = getAppenderList(logger);
+        if (currentAppenders != null) {
+            result = currentAppenders.remove(appender);
         }
         return result;
     }
@@ -262,13 +255,23 @@ final class AppenderHandler extends ExtHandler {
      * @param logger the logger to close the appenders on.
      */
     public static void closeAppenders(final Logger logger) {
-        synchronized (APPENDER_LOCK) {
-            final List<Appender> appenders = getAppenders(logger);
-            for (Appender appender : appenders) {
-                if (appender instanceof AppenderAttachable) {
-                    appender.close();
-                }
+        final List<Appender> appenders = getAppenderList(logger);
+        for (Appender appender : appenders) {
+            if (appender instanceof AppenderAttachable) {
+                appender.close();
             }
         }
+    }
+
+    private static CopyOnWriteArrayList<Appender> getAppenderList(final Logger logger) {
+        CopyOnWriteArrayList<Appender> result = logger.getAttachment(APPENDERS_KEY);
+        if (result == null) {
+            result = new CopyOnWriteArrayList<Appender>();
+            final CopyOnWriteArrayList<Appender> current = logger.attachIfAbsent(APPENDERS_KEY, result);
+            if (current != null) {
+                result = current;
+            }
+        }
+        return result;
     }
 }
