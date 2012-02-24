@@ -44,15 +44,10 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
     private final RendererMap rendererMap;
     private ThrowableRenderer throwableRenderer = null;
 
-    /**
-     * Create a new logger hierarchy.
-     *
-     * @param root The root of the new hierarchy.
-     */
     public Hierarchy(Logger root) {
         listeners = new CopyOnWriteArraySet<HierarchyEventListener>();
-        jblmRootLogger = LogManagerFacade.getJbossRootLogger();
-        jblmRootLogger.setLevel(LevelMapping.getLevelFor(root.getLevel()));
+        jblmRootLogger = JBossLogManagerFacade.getJbossRootLogger();
+        jblmRootLogger.setLevel(JBossLevelMapping.getLevelFor(root.getLevel()));
         defaultFactory = new DefaultCategoryFactory();
         rendererMap = new RendererMap();
     }
@@ -79,7 +74,7 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
 
     @Override
     public Logger exists(String name) {
-        return LogManagerFacade.exists(name);
+        return JBossLogManagerFacade.exists(name);
     }
 
     @Override
@@ -95,7 +90,7 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
     @Override
     public void setThreshold(Level l) {
         if (l != null) {
-            LogManagerFacade.getJbossRootLogger().setLevel(LevelMapping.getLevelFor(l));
+            JBossLogManagerFacade.getJbossRootLogger().setLevel(JBossLevelMapping.getLevelFor(l));
         }
     }
 
@@ -114,7 +109,7 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
 
     @Override
     public Level getThreshold() {
-        return LevelMapping.getPriorityFor(LogManagerFacade.getJbossRootLogger().getLevel());
+        return JBossLevelMapping.getPriorityFor(JBossLogManagerFacade.getJbossRootLogger().getLevel());
     }
 
     @Override
@@ -124,12 +119,12 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
 
     @Override
     public Logger getLogger(final String name, LoggerFactory factory) {
-        return LogManagerFacade.getLogger(this, name, factory);
+        return JBossLogManagerFacade.getLogger(this, name, factory);
     }
 
     @Override
     public Enumeration getCurrentLoggers() {
-        return Collections.enumeration(LogManagerFacade.getLoggers());
+        return Collections.enumeration(JBossLogManagerFacade.getLoggers());
     }
 
     @Override
@@ -144,12 +139,12 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
 
     @Override
     public Logger getRootLogger() {
-        return LogManagerFacade.getLogger(jblmRootLogger);
+        return JBossLogManagerFacade.getLogger(jblmRootLogger);
     }
 
     @Override
     public boolean isDisabled(int level) {
-        return LevelMapping.getPriorityFor(LogManagerFacade.getJbossRootLogger().getLevel()).toInt() > level;
+        return JBossLevelMapping.getPriorityFor(JBossLogManagerFacade.getJbossRootLogger().getLevel()).toInt() > level;
     }
 
     @Deprecated

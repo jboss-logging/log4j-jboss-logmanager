@@ -19,123 +19,39 @@ package org.apache.log4j;
 
 import org.apache.log4j.spi.LoggerFactory;
 
-
-/**
- * This is the central class in the log4j package. Most logging
- * operations, except configuration, are done through this class.
- *
- * @author Ceki G&uuml;lc&uuml;
- * @since log4j 1.2
- */
 public class Logger extends Category {
 
-    /**
-     * The fully qualified name of the Logger class. See also the
-     * getFQCN method.
-     */
     private static final String FQCN = Logger.class.getName();
-
 
     protected Logger(String name) {
         super(name);
     }
 
-    /**
-     * Retrieve a logger named according to the value of the
-     * <code>name</code> parameter. If the named logger already exists,
-     * then the existing instance will be returned. Otherwise, a new
-     * instance is created.
-     * <p/>
-     * <p>By default, loggers do not have a set level but inherit it
-     * from their neareast ancestor with a set level. This is one of the
-     * central features of log4j.
-     *
-     * @param name The name of the logger to retrieve.
-     */
     public static Logger getLogger(String name) {
         return LogManager.getLogger(name);
     }
 
-    /**
-     * Shorthand for <code>getLogger(clazz.getName())</code>.
-     *
-     * @param clazz The name of <code>clazz</code> will be used as the
-     *              name of the logger to retrieve.  See {@link #getLogger(String)}
-     *              for more detailed information.
-     */
     public static Logger getLogger(Class clazz) {
         return LogManager.getLogger(clazz.getName());
     }
 
-
-    /**
-     * Return the root logger for the current logger repository.
-     * <p/>
-     * The {@link #getName Logger.getName()} method for the root logger always returns
-     * string value: "root". However, calling
-     * <code>Logger.getLogger("root")</code> does not retrieve the root
-     * logger but a logger just under root named "root".
-     * <p/>
-     * In other words, calling this method is the only way to retrieve the
-     * root logger.
-     */
     public static Logger getRootLogger() {
         return LogManager.getRootLogger();
     }
 
-    /**
-     * Like {@link #getLogger(String)} except that the type of logger
-     * instantiated depends on the type returned by the {@link
-     * LoggerFactory#makeNewLoggerInstance} method of the
-     * <code>factory</code> parameter.
-     * <p/>
-     * <p>This method is intended to be used by sub-classes.
-     *
-     * @param name    The name of the logger to retrieve.
-     * @param factory A {@link LoggerFactory} implementation that will
-     *                actually create a new Instance.
-     * @since 0.8.5
-     */
     public static Logger getLogger(String name, LoggerFactory factory) {
         return LogManager.getLogger(name, factory);
     }
 
-    /**
-     * Log a message object with the {@link org.apache.log4j.Level#TRACE TRACE} level.
-     *
-     * @param message the message object to log.
-     * @see #debug(Object) for an explanation of the logic applied.
-     * @since 1.2.12
-     */
     public void trace(Object message) {
         forcedLog(FQCN, Level.TRACE, message, null);
     }
 
-    /**
-     * Log a message object with the <code>TRACE</code> level including the
-     * stack trace of the {@link Throwable}<code>t</code> passed as parameter.
-     * <p/>
-     * <p>
-     * See {@link #debug(Object)} form for more detailed information.
-     * </p>
-     *
-     * @param message the message object to log.
-     * @param t       the exception to log, including its stack trace.
-     * @since 1.2.12
-     */
     public void trace(Object message, Throwable t) {
         forcedLog(FQCN, Level.TRACE, message, t);
     }
 
-    /**
-     * Check whether this category is enabled for the TRACE  Level.
-     *
-     * @return boolean - <code>true</code> if this category is enabled for level
-     *         TRACE, <code>false</code> otherwise.
-     * @since 1.2.12
-     */
     public boolean isTraceEnabled() {
-        return getJbossLogger().isLoggable(org.jboss.logmanager.Level.TRACE);
+        return jblmLogger.isLoggable(org.jboss.logmanager.Level.TRACE);
     }
-
 }

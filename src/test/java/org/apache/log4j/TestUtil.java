@@ -17,8 +17,6 @@
 
 package org.apache.log4j;
 
-import org.apache.log4j.spi.RendererSupport;
-
 import java.util.Collection;
 
 /**
@@ -32,7 +30,7 @@ public class TestUtil {
         root.setResourceBundle(null);
         LogManager.getLoggerRepository().setThreshold(Level.ALL);
         shutdown();
-        final Collection<Logger> loggers = LogManagerFacade.getLoggers();
+        final Collection<Logger> loggers = JBossLogManagerFacade.getLoggers();
         for (Logger logger : loggers) {
             logger.setLevel(null);
             logger.setAdditivity(true);
@@ -45,7 +43,7 @@ public class TestUtil {
 
         // begin by closing nested appenders
         root.closeNestedAppenders();
-        final Collection<Logger> loggers = LogManagerFacade.getLoggers();
+        final Collection<Logger> loggers = JBossLogManagerFacade.getLoggers();
         for (Logger logger : loggers) {
             logger.closeNestedAppenders();
         }

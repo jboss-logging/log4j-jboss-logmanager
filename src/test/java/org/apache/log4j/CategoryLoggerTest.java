@@ -112,8 +112,8 @@ public class CategoryLoggerTest {
         root.info(ROOT_LOGGER_MSG);
 
         final String msg = JBL_MESSAGE + " root logger";
-        org.jboss.logmanager.Logger.getLogger(LogManagerFacade.JBL_ROOT_NAME).info(msg);
-        org.jboss.logging.Logger.getLogger(LogManagerFacade.JBL_ROOT_NAME).info(msg);
+        org.jboss.logmanager.Logger.getLogger(JBossLogManagerFacade.JBL_ROOT_NAME).info(msg);
+        org.jboss.logging.Logger.getLogger(JBossLogManagerFacade.JBL_ROOT_NAME).info(msg);
 
         assertEquals(3, appender.counter);
         assertEquals(3, stringAppender.messages.size());

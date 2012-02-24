@@ -28,14 +28,14 @@ import java.util.Map;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class LevelMapping {
+class JBossLevelMapping {
 
     public static final org.jboss.logmanager.Level DEFAULT_LEVEL = org.jboss.logmanager.Level.DEBUG;
     public static final Level DEFAULT_LOG4J_LEVEL = Level.DEBUG;
 
     private static final Map<java.util.logging.Level, Level> priorityMap;
 
-    private LevelMapping() {
+    private JBossLevelMapping() {
     }
 
     static {

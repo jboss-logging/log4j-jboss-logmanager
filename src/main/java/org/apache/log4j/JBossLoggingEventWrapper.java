@@ -31,7 +31,7 @@ import org.jboss.logmanager.ExtLogRecord;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class LoggingEventWrapper extends LoggingEvent {
+class JBossLoggingEventWrapper extends LoggingEvent {
     private static final String RECORD_KEY = "org.jboss.logmanager.record";
 
     /**
@@ -40,11 +40,11 @@ class LoggingEventWrapper extends LoggingEvent {
      * @param record   the log record.
      * @param category the category the event was for.
      */
-    public LoggingEventWrapper(final ExtLogRecord record, final Category category) {
+    public JBossLoggingEventWrapper(final ExtLogRecord record, final Category category) {
         super(record.getLoggerClassName(),
                 category,
                 record.getMillis(),
-                LevelMapping.getPriorityFor(record.getLevel()),
+                JBossLevelMapping.getPriorityFor(record.getLevel()),
                 record.getFormattedMessage(),
                 record.getThreadName(),
                 record.getThrown() == null ? null : new ThrowableInformation(record.getThrown()),
@@ -66,7 +66,7 @@ class LoggingEventWrapper extends LoggingEvent {
         if (rec != null) {
             return rec;
         }
-        final ExtLogRecord newRecord = new ExtLogRecord(LevelMapping.getLevelFor(event.getLevel()), (String) event.getMessage(), event.getFQNOfLoggerClass());
+        final ExtLogRecord newRecord = new ExtLogRecord(JBossLevelMapping.getLevelFor(event.getLevel()), (String) event.getMessage(), event.getFQNOfLoggerClass());
         newRecord.setLoggerName(event.getLoggerName());
         newRecord.setMillis(event.getTimeStamp());
         newRecord.setThreadName(event.getThreadName());

@@ -32,7 +32,7 @@ import org.jboss.logmanager.Logger.AttachmentKey;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class LogManagerFacade {
+class JBossLogManagerFacade {
 
     public static final String LOG4J_ROOT_NAME = "root";
     public static final String JBL_ROOT_NAME = "";
@@ -41,7 +41,7 @@ class LogManagerFacade {
     private static final AttachmentKey<Hierarchy> HIERARCHY_KEY = new AttachmentKey<Hierarchy>();
     private static final AttachmentKey<Boolean> APPENDER_ATTACHED_KEY = new AttachmentKey<Boolean>();
 
-    private LogManagerFacade() {
+    private JBossLogManagerFacade() {
     }
 
     /**
@@ -55,7 +55,7 @@ class LogManagerFacade {
         final String loggerName = (name == null || name.equals(LOG4J_ROOT_NAME)) ? JBL_ROOT_NAME : name;
         org.jboss.logmanager.Logger result = LogContext.getLogContext().getLogger(loggerName);
         if (result.attachIfAbsent(APPENDER_ATTACHED_KEY, Boolean.TRUE) == null) {
-            AppenderHandler.createAndAttach(result);
+            JBossAppenderHandler.createAndAttach(result);
         }
         return result;
     }
@@ -76,7 +76,7 @@ class LogManagerFacade {
                 synchronized (LOGGER_KEY) {
                     root = jbossRoot.getAttachment(LOGGER_KEY);
                     if (root == null) {
-                        root = new RootLogger(LevelMapping.DEFAULT_LOG4J_LEVEL);
+                        root = new RootLogger(JBossLevelMapping.DEFAULT_LOG4J_LEVEL);
                         jbossRoot.attach(LOGGER_KEY, root);
                     }
                 }

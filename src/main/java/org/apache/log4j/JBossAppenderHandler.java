@@ -17,7 +17,7 @@
 
 package org.apache.log4j;
 
-import static org.apache.log4j.LogManagerFacade.JBL_ROOT_NAME;
+import static org.apache.log4j.JBossLogManagerFacade.JBL_ROOT_NAME;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,13 +40,13 @@ import org.jboss.logmanager.Logger;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-final class AppenderHandler extends ExtHandler {
+final class JBossAppenderHandler extends ExtHandler {
 
     private static final org.jboss.logmanager.Logger.AttachmentKey<CopyOnWriteArrayList<Appender>> APPENDERS_KEY = new org.jboss.logmanager.Logger.AttachmentKey<CopyOnWriteArrayList<Appender>>();
 
     private final Logger logger;
 
-    private AppenderHandler(final Logger logger) {
+    private JBossAppenderHandler(final Logger logger) {
         this.logger = logger;
     }
 
@@ -56,7 +56,7 @@ final class AppenderHandler extends ExtHandler {
      * @param logger the logger to attach the handler to and process appenders for.
      */
     public static void createAndAttach(final Logger logger) {
-        final AppenderHandler handler = new AppenderHandler(logger);
+        final JBossAppenderHandler handler = new JBossAppenderHandler(logger);
         logger.addHandler(handler);
     }
 
@@ -64,7 +64,7 @@ final class AppenderHandler extends ExtHandler {
     @Override
     public void setFormatter(final Formatter newFormatter) throws SecurityException {
         super.setFormatter(newFormatter);
-        final FormatterLayout layout = new FormatterLayout(newFormatter);
+        final JBossFormatterLayout layout = new JBossFormatterLayout(newFormatter);
         final List<Appender> appenders = getAllAppenders(logger);
         for (Appender appender : appenders) {
             appender.setLayout(layout);
@@ -78,10 +78,10 @@ final class AppenderHandler extends ExtHandler {
             loggerName = JBL_ROOT_NAME;
         }
         if (loggerName.equals(logger.getName())) {
-            final LoggingEvent event = new LoggingEventWrapper(record, LogManagerFacade.getLogger(logger));
+            final LoggingEvent event = new JBossLoggingEventWrapper(record, JBossLogManagerFacade.getLogger(logger));
             final List<Appender> appenders = getAllAppenders(logger);
             for (Appender appender : appenders) {
-                if (new FilterWrapper(appender.getFilter(), true).isLoggable(record)) {
+                if (new JBossFilterWrapper(appender.getFilter(), true).isLoggable(record)) {
                     appender.doAppend(event);
                 }
             }
@@ -111,11 +111,11 @@ final class AppenderHandler extends ExtHandler {
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof AppenderHandler)) {
+        if (!(obj instanceof JBossAppenderHandler)) {
             return false;
         }
-        final AppenderHandler other = (AppenderHandler) obj;
-        return (this.logger == null ? other.logger == null : (this.logger.equals(other.logger)));
+        final JBossAppenderHandler other = (JBossAppenderHandler) obj;
+        return (logger == null ? other.logger == null : (logger.equals(other.logger)));
     }
 
     @Override
@@ -174,9 +174,9 @@ final class AppenderHandler extends ExtHandler {
     static void getAllAppenders(final Logger logger, final List<Appender> result) {
         result.addAll(getAppenderList(logger));
         if (logger.getUseParentHandlers()) {
-            final Category category = LogManagerFacade.getLogger(logger);
+            final Category category = JBossLogManagerFacade.getLogger(logger);
             if (category != null && category.getParent() != null) {
-                getAllAppenders(category.getParent().getJbossLogger(), result);
+                getAllAppenders(category.getParent().jblmLogger, result);
             }
         }
     }

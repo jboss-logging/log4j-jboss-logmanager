@@ -26,11 +26,11 @@ import org.jboss.logmanager.ExtLogRecord;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class FilterWrapper implements java.util.logging.Filter {
+class JBossFilterWrapper implements java.util.logging.Filter {
     private final Filter filterChain;
     private final boolean defaultResult;
 
-    public FilterWrapper(Filter filterChain, final boolean defaultResult) {
+    public JBossFilterWrapper(Filter filterChain, final boolean defaultResult) {
         this.filterChain = filterChain;
         this.defaultResult = defaultResult;
     }
@@ -39,7 +39,7 @@ class FilterWrapper implements java.util.logging.Filter {
         final ExtLogRecord extRec = ExtLogRecord.wrap(record);
         Filter filter = filterChain;
         while (filter != null) {
-            final int result = filter.decide(new LoggingEventWrapper(extRec, Logger.getLogger(record.getLoggerName())));
+            final int result = filter.decide(new JBossLoggingEventWrapper(extRec, Logger.getLogger(record.getLoggerName())));
             switch (result) {
                 case Filter.DENY: return false;
                 case Filter.ACCEPT: return true;

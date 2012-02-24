@@ -28,7 +28,7 @@ import org.apache.log4j.spi.LoggingEvent;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class FormatterLayout extends Layout {
+class JBossFormatterLayout extends Layout {
     private final Formatter formatter;
 
     /**
@@ -36,13 +36,13 @@ class FormatterLayout extends Layout {
      *
      * @param formatter the formatter to delegate to
      */
-    public FormatterLayout(final Formatter formatter) {
+    public JBossFormatterLayout(final Formatter formatter) {
         this.formatter = formatter;
     }
 
     @Override
     public String format(final LoggingEvent event) {
-        return formatter.format(LoggingEventWrapper.getLogRecordFor(event));
+        return formatter.format(JBossLoggingEventWrapper.getLogRecordFor(event));
     }
 
     @Override
