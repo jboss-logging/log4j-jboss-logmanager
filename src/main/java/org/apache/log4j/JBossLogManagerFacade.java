@@ -39,7 +39,6 @@ class JBossLogManagerFacade {
 
     private static final AttachmentKey<Logger> LOGGER_KEY = new AttachmentKey<Logger>();
     private static final AttachmentKey<Hierarchy> HIERARCHY_KEY = new AttachmentKey<Hierarchy>();
-    private static final AttachmentKey<Boolean> APPENDER_ATTACHED_KEY = new AttachmentKey<Boolean>();
 
     private JBossLogManagerFacade() {
     }
@@ -54,9 +53,7 @@ class JBossLogManagerFacade {
     public static org.jboss.logmanager.Logger getJbossLogger(final String name) {
         final String loggerName = (name == null || name.equals(LOG4J_ROOT_NAME)) ? JBL_ROOT_NAME : name;
         org.jboss.logmanager.Logger result = LogContext.getLogContext().getLogger(loggerName);
-        if (result.attachIfAbsent(APPENDER_ATTACHED_KEY, Boolean.TRUE) == null) {
-            JBossAppenderHandler.createAndAttach(result);
-        }
+        JBossAppenderHandler.createAndAttach(result);
         return result;
     }
 

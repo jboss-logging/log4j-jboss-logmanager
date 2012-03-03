@@ -51,25 +51,24 @@ final class JBossAppenderHandler extends ExtHandler {
     }
 
     /**
-     * Creates a new handler for handling appenders.
+     * Creates a new handler for handling appenders if one does not already exist.
      *
-     * @param logger the logger to attach the handler to and process appenders for.
+     * @param logger the logger to attach the handler to and process appenders for
      */
     public static void createAndAttach(final Logger logger) {
-        final JBossAppenderHandler handler = new JBossAppenderHandler(logger);
-        logger.addHandler(handler);
-    }
-
-
-    @Override
-    public void setFormatter(final Formatter newFormatter) throws SecurityException {
-        super.setFormatter(newFormatter);
-        final JBossFormatterLayout layout = new JBossFormatterLayout(newFormatter);
-        final List<Appender> appenders = getAllAppenders(logger);
-        for (Appender appender : appenders) {
-            appender.setLayout(layout);
+        if (logger.getAttachment(APPENDERS_KEY) == null) {
+            CopyOnWriteArrayList<Appender> list = new CopyOnWriteArrayList<Appender>();
+            final CopyOnWriteArrayList<Appender> existing = logger.attachIfAbsent(APPENDERS_KEY, list);
+            if (existing != null) {
+                list = existing;
+            } else {
+                // add handler
+                final JBossAppenderHandler handler = new JBossAppenderHandler(logger);
+                logger.addHandler(handler);
+            }
         }
     }
+
 
     @Override
     protected void doPublish(final ExtLogRecord record) {
