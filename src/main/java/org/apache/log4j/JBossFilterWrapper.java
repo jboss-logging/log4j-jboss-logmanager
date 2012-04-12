@@ -22,7 +22,7 @@ class JBossFilterWrapper implements java.util.logging.Filter {
         final ExtLogRecord extRec = ExtLogRecord.wrap(record);
         Filter filter = filterChain;
         while (filter != null) {
-            final int result = filter.decide(new JBossLoggingEventWrapper(extRec, Logger.getLogger(record.getLoggerName())));
+            final int result = filter.decide(new JBossLoggingEvent(extRec, Logger.getLogger(record.getLoggerName())));
             switch (result) {
                 case Filter.DENY: return false;
                 case Filter.ACCEPT: return true;

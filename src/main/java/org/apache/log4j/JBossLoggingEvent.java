@@ -14,7 +14,7 @@ import org.jboss.logmanager.ExtLogRecord;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class JBossLoggingEventWrapper extends LoggingEvent {
+class JBossLoggingEvent extends LoggingEvent {
     private static final String RECORD_KEY = "org.jboss.logmanager.record";
 
     /**
@@ -23,7 +23,7 @@ class JBossLoggingEventWrapper extends LoggingEvent {
      * @param record   the log record.
      * @param category the category the event was for.
      */
-    public JBossLoggingEventWrapper(final ExtLogRecord record, final Category category) {
+    public JBossLoggingEvent(final ExtLogRecord record, final Category category) {
         super(record.getLoggerClassName(),
                 category,
                 record.getMillis(),
