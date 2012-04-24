@@ -59,7 +59,7 @@ final class JBossAppenderHandler extends ExtHandler {
             loggerName = JBL_ROOT_NAME;
         }
         if (loggerName.equals(logger.getName())) {
-            final LoggingEvent event = new JBossLoggingEvent(record, JBossLogManagerFacade.getLogger(logger));
+            final LoggingEvent event = new LoggingEvent(record, JBossLogManagerFacade.getLogger(logger));
             final List<Appender> appenders = getAllAppenders(logger);
             for (Appender appender : appenders) {
                 if (new JBossFilterWrapper(appender.getFilter(), true).isLoggable(record)) {
@@ -75,7 +75,7 @@ final class JBossAppenderHandler extends ExtHandler {
 
     @Override
     public void close() throws SecurityException {
-        checkAccess();
+        checkAccess(this);
         closeAppenders(logger);
     }
 

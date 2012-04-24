@@ -2,6 +2,8 @@ package org.apache.log4j;
 import java.util.logging.LogRecord;
 
 import org.apache.log4j.spi.Filter;
+import org.apache.log4j.spi.LoggingEvent;
+
 import org.jboss.logmanager.ExtLogRecord;
 
 /**
@@ -22,7 +24,7 @@ class JBossFilterWrapper implements java.util.logging.Filter {
         final ExtLogRecord extRec = ExtLogRecord.wrap(record);
         Filter filter = filterChain;
         while (filter != null) {
-            final int result = filter.decide(new JBossLoggingEvent(extRec, Logger.getLogger(record.getLoggerName())));
+            final int result = filter.decide(new LoggingEvent(extRec, Logger.getLogger(record.getLoggerName())));
             switch (result) {
                 case Filter.DENY: return false;
                 case Filter.ACCEPT: return true;

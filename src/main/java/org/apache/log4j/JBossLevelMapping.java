@@ -11,7 +11,7 @@ import java.util.Map;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class JBossLevelMapping {
+public class JBossLevelMapping {
 
     public static final org.jboss.logmanager.Level DEFAULT_LEVEL = org.jboss.logmanager.Level.DEBUG;
     public static final Level DEFAULT_LOG4J_LEVEL = Level.DEBUG;
@@ -47,7 +47,7 @@ class JBossLevelMapping {
      *
      * @return the log4j logging level or {@code null} if it cold not be found.
      */
-    static Level getPriorityFor(java.util.logging.Level level) {
+    public static Level getPriorityFor(java.util.logging.Level level) {
         final Level p;
         return (p = priorityMap.get(level)) == null ? DEFAULT_LOG4J_LEVEL : p;
     }
@@ -59,7 +59,7 @@ class JBossLevelMapping {
      *
      * @return the log4j logging level or {@code null} if it cold not be found.
      */
-    static Level getPriorityFor(int level) {
+    public static Level getPriorityFor(int level) {
         final Level p;
         for (java.util.logging.Level l : priorityMap.keySet()) {
             if (l.intValue() == level) {
@@ -76,7 +76,7 @@ class JBossLevelMapping {
      *
      * @return the jboss-log-manager level or by default {@link org.jboss.logmanager.Level#DEBUG}.
      */
-    static java.util.logging.Level getLevelFor(Priority level) {
+    public static java.util.logging.Level getLevelFor(Priority level) {
         if (level == null) {
             return DEFAULT_LEVEL;
         }

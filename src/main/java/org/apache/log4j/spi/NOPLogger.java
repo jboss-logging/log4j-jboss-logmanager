@@ -138,6 +138,7 @@ public final class NOPLogger extends Logger {
     /**
      * {@inheritDoc}
      */
+    @Deprecated
     public Priority getChainedPriority() {
         return getEffectiveLevel();
     }
@@ -250,6 +251,7 @@ public final class NOPLogger extends Logger {
     /**
      * {@inheritDoc}
      */
+    @Deprecated
     public void setPriority(final Priority priority) {
     }
 
@@ -291,6 +293,7 @@ public final class NOPLogger extends Logger {
     }
 
     @Override
+    @Deprecated
     public LoggerRepository getHierarchy() {
         return repo;
     }

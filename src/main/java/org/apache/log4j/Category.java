@@ -50,7 +50,7 @@ public class Category implements AppenderAttachable {
     final org.jboss.logmanager.Logger jblmLogger;
 
     protected Category(String name) {
-        jblmLogger = JBossLogManagerFacade.getJbossLogger(name);
+        jblmLogger = JBossLogManagerFacade.getJBossLogger(name);
     }
 
     public void addAppender(Appender newAppender) {
@@ -63,13 +63,10 @@ public class Category implements AppenderAttachable {
     }
 
     public void callAppenders(LoggingEvent event) {
-        final List<Appender> appenders = JBossAppenderHandler.getAllAppenders(jblmLogger);
-        for (Appender appender : appenders) {
-            appender.doAppend(event);
-        }
+        jblmLogger.logRaw(event.getLogRecord());
     }
 
-    org.jboss.logmanager.Logger getJbossLogger() {
+    org.jboss.logmanager.Logger getJBossLogger() {
         return jblmLogger;
     }
 
@@ -78,19 +75,27 @@ public class Category implements AppenderAttachable {
     }
 
     public void debug(Object message) {
-        forcedLog(FQCN, Level.DEBUG, message, null);
+        if (jblmLogger.isLoggable(org.jboss.logmanager.Level.DEBUG)) {
+            forcedLog(FQCN, Level.DEBUG, message, null);
+        }
     }
 
     public void debug(Object message, Throwable t) {
-        forcedLog(FQCN, Level.DEBUG, message, t);
+        if (jblmLogger.isLoggable(org.jboss.logmanager.Level.DEBUG)) {
+            forcedLog(FQCN, Level.DEBUG, message, t);
+        }
     }
 
     public void error(Object message) {
-        forcedLog(FQCN, Level.ERROR, message, null);
+        if (jblmLogger.isLoggable(org.jboss.logmanager.Level.ERROR)) {
+            forcedLog(FQCN, Level.ERROR, message, null);
+        }
     }
 
     public void error(Object message, Throwable t) {
-        forcedLog(FQCN, Level.ERROR, message, t);
+        if (jblmLogger.isLoggable(org.jboss.logmanager.Level.ERROR)) {
+            forcedLog(FQCN, Level.ERROR, message, t);
+        }
     }
 
     public static Logger exists(String name) {
@@ -98,17 +103,19 @@ public class Category implements AppenderAttachable {
     }
 
     public void fatal(Object message) {
-        forcedLog(FQCN, Level.FATAL, message, null);
+        if (jblmLogger.isLoggable(org.jboss.logmanager.Level.FATAL)) {
+            forcedLog(FQCN, Level.FATAL, message, null);
+        }
     }
 
     public void fatal(Object message, Throwable t) {
-        forcedLog(FQCN, Level.FATAL, message, t);
+        if (jblmLogger.isLoggable(org.jboss.logmanager.Level.FATAL)) {
+            forcedLog(FQCN, Level.FATAL, message, t);
+        }
     }
 
     protected void forcedLog(String fqcn, Priority level, Object message, Throwable t) {
-        if (jblmLogger.isLoggable(JBossLevelMapping.getLevelFor(level))) {
-            callAppenders(new LoggingEvent(fqcn, this, level, message, t));
-        }
+        callAppenders(new LoggingEvent(fqcn, this, level, message, t));
     }
 
     public boolean getAdditivity() {
@@ -215,11 +222,15 @@ public class Category implements AppenderAttachable {
     }
 
     public void info(Object message) {
-        forcedLog(FQCN, Level.INFO, message, null);
+        if (jblmLogger.isLoggable(org.jboss.logmanager.Level.INFO)) {
+            forcedLog(FQCN, Level.INFO, message, null);
+        }
     }
 
     public void info(Object message, Throwable t) {
-        forcedLog(FQCN, Level.INFO, message, t);
+        if (jblmLogger.isLoggable(org.jboss.logmanager.Level.INFO)) {
+            forcedLog(FQCN, Level.INFO, message, t);
+        }
     }
 
     public boolean isAttached(Appender appender) {
@@ -261,15 +272,21 @@ public class Category implements AppenderAttachable {
     }
 
     public void log(Priority priority, Object message, Throwable t) {
-        forcedLog(FQCN, priority, message, t);
+        if (jblmLogger.isLoggable(JBossLevelMapping.getLevelFor(priority))) {
+            forcedLog(FQCN, priority, message, t);
+        }
     }
 
     public void log(Priority priority, Object message) {
-        forcedLog(FQCN, priority, message, null);
+        if (jblmLogger.isLoggable(JBossLevelMapping.getLevelFor(priority))) {
+            forcedLog(FQCN, priority, message, null);
+        }
     }
 
     public void log(String callerFQCN, Priority level, Object message, Throwable t) {
-        forcedLog(callerFQCN, level, message, t);
+        if (jblmLogger.isLoggable(JBossLevelMapping.getLevelFor(level))) {
+            forcedLog(callerFQCN, level, message, t);
+        }
     }
 
     private void fireRemoveAppenderEvent(final LoggerRepository repository, final Appender appender) {
@@ -308,6 +325,7 @@ public class Category implements AppenderAttachable {
         jblmLogger.setUseParentHandlers(additive);
     }
 
+    @SuppressWarnings("unused")
     final void setHierarchy(LoggerRepository repository) {
         // no-op
     }
@@ -332,10 +350,14 @@ public class Category implements AppenderAttachable {
     }
 
     public void warn(Object message) {
-        forcedLog(FQCN, Level.WARN, message, null);
+        if (jblmLogger.isLoggable(org.jboss.logmanager.Level.WARN)) {
+            forcedLog(FQCN, Level.WARN, message, null);
+        }
     }
 
     public void warn(Object message, Throwable t) {
-        forcedLog(FQCN, Level.WARN, message, t);
+        if (jblmLogger.isLoggable(org.jboss.logmanager.Level.WARN)) {
+            forcedLog(FQCN, Level.WARN, message, t);
+        }
     }
 }

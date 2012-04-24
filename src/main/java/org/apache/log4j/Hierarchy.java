@@ -54,7 +54,7 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
 
     public Hierarchy(Logger root) {
         listeners = new CopyOnWriteArraySet<HierarchyEventListener>();
-        jblmRootLogger = JBossLogManagerFacade.getJbossRootLogger();
+        jblmRootLogger = JBossLogManagerFacade.getJBossRootLogger();
         jblmRootLogger.setLevel(JBossLevelMapping.getLevelFor(root.getLevel()));
         defaultFactory = new DefaultCategoryFactory();
         rendererMap = new RendererMap();
@@ -98,7 +98,7 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
     @Override
     public void setThreshold(Level l) {
         if (l != null) {
-            JBossLogManagerFacade.getJbossRootLogger().setLevel(JBossLevelMapping.getLevelFor(l));
+            JBossLogManagerFacade.getJBossRootLogger().setLevel(JBossLevelMapping.getLevelFor(l));
         }
     }
 
@@ -117,7 +117,7 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
 
     @Override
     public Level getThreshold() {
-        return JBossLevelMapping.getPriorityFor(JBossLogManagerFacade.getJbossRootLogger().getLevel());
+        return JBossLevelMapping.getPriorityFor(JBossLogManagerFacade.getJBossRootLogger().getLevel());
     }
 
     @Override
@@ -152,7 +152,7 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
 
     @Override
     public boolean isDisabled(int level) {
-        return JBossLevelMapping.getPriorityFor(JBossLogManagerFacade.getJbossRootLogger().getLevel()).toInt() > level;
+        return JBossLevelMapping.getPriorityFor(JBossLogManagerFacade.getJBossRootLogger().getLevel()).toInt() > level;
     }
 
     @Deprecated
