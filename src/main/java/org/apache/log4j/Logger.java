@@ -48,11 +48,15 @@ public class Logger extends Category {
     }
 
     public void trace(Object message) {
-        forcedLog(FQCN, Level.TRACE, message, null);
+        if (jblmLogger.isLoggable(org.jboss.logmanager.Level.TRACE)) {
+            forcedLog(FQCN, Level.TRACE, message, null);
+        }
     }
 
     public void trace(Object message, Throwable t) {
-        forcedLog(FQCN, Level.TRACE, message, t);
+        if (jblmLogger.isLoggable(org.jboss.logmanager.Level.TRACE)) {
+            forcedLog(FQCN, Level.TRACE, message, t);
+        }
     }
 
     public boolean isTraceEnabled() {
