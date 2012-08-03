@@ -104,6 +104,22 @@ public class CategoryLoggerTest {
         assertEquals(msg, stringAppender.messages.get(1));
         assertEquals(msg, stringAppender.messages.get(2));
     }
+    
+    @Test
+    public void levelChangeTest() {
+        final CountingAppender appender = new CountingAppender();
+        log4jLogger.addAppender(appender);
+        log4jLogger.setLevel(Level.INFO);
+        
+        log4jLogger.error(MESSAGE);
+        log4jLogger.fatal(MESSAGE);
+        log4jLogger.warn(MESSAGE);
+        log4jLogger.info(MESSAGE);
+        log4jLogger.debug(MESSAGE);
+        log4jLogger.trace(MESSAGE);
+        
+        assertEquals(4, appender.counter);
+    }
 
     private static class CountingAppender extends AbstractAppender {
 
