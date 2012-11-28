@@ -26,6 +26,7 @@ import java.util.Enumeration;
 import org.apache.log4j.spi.LoggerFactory;
 import org.apache.log4j.spi.LoggerRepository;
 import org.apache.log4j.spi.RepositorySelector;
+import org.jboss.logmanager.LogContext;
 
 public class LogManager {
     public static final String DEFAULT_CONFIGURATION_FILE = "log4j.properties";
@@ -46,7 +47,7 @@ public class LogManager {
     }
 
     public static LoggerRepository getLoggerRepository() {
-        return JBossLogManagerFacade.getLoggerRepository();
+        return JBossLogManagerFacade.getLoggerRepository(LogContext.getLogContext());
     }
 
     public static Logger getRootLogger() {

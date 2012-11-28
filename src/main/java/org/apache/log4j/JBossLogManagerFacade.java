@@ -33,46 +33,24 @@ public class JBossLogManagerFacade {
      *
      * @return a logger.
      */
-    public static org.jboss.logmanager.Logger getJBossLogger(final String name) {
+    static org.jboss.logmanager.Logger getJBossLogger(final LogContext logContext, final String name) {
         final String loggerName = (name == null || name.equals(LOG4J_ROOT_NAME)) ? JBL_ROOT_NAME : name;
-        org.jboss.logmanager.Logger result = LogContext.getLogContext().getLogger(loggerName);
-        JBossAppenderHandler.createAndAttach(result);
-        return result;
+        return logContext.getLogger(loggerName);
     }
 
     /**
-     * Locates the log4j logger repository.
+     * Gets the log4j logger repository for the log context.
      *
-     * @return the log4j logger repository.
+     * @param logContext the log context which the log4j repository is located on or should be created on
+     *
+     * @return the log4j logger repository
      */
-    public static LoggerRepository getLoggerRepository() {
-        final org.jboss.logmanager.Logger jbossRoot = getJBossRootLogger();
-        Hierarchy hierarchy = jbossRoot.getAttachment(HIERARCHY_KEY);
-        if (hierarchy == null) {
-            // Always attach the root logger
-            Logger root = jbossRoot.getAttachment(LOGGER_KEY);
-            if (root == null) {
-                root = new RootLogger(JBossLevelMapping.getPriorityFor(jbossRoot.getLevel()));
-                final Logger appearing = jbossRoot.attachIfAbsent(LOGGER_KEY, root);
-                if (appearing != null) {
-                    root = appearing;
-                }
-            }
-            hierarchy = new Hierarchy(root);
-            final Hierarchy appearing = jbossRoot.attachIfAbsent(HIERARCHY_KEY, hierarchy);
-            if (appearing != null) {
-                hierarchy = appearing;
-            }
-        }
-        return hierarchy;
-    }
-
     public static LoggerRepository getLoggerRepository(LogContext logContext) {
-        final org.jboss.logmanager.Logger jbossRoot = logContext.getLogger("");
+        final org.jboss.logmanager.Logger jbossRoot = getJBossLogger(logContext, JBL_ROOT_NAME);
         Hierarchy hierarchy = jbossRoot.getAttachment(HIERARCHY_KEY);
         if (hierarchy == null) {
             // Always attach the root logger
-            Logger root = jbossRoot.getAttachment(LOGGER_KEY);
+            Logger root = getLogger(jbossRoot);
             if (root == null) {
                 root = new RootLogger(JBossLevelMapping.getPriorityFor(jbossRoot.getLevel()));
                 final Logger appearing = jbossRoot.attachIfAbsent(LOGGER_KEY, root);
@@ -87,15 +65,6 @@ public class JBossLogManagerFacade {
             }
         }
         return hierarchy;
-    }
-
-    /**
-     * Returns the root JBoss logger from the JBoss log manager.
-     *
-     * @return the root logger.
-     */
-    public static org.jboss.logmanager.Logger getJBossRootLogger() {
-        return getJBossLogger(JBL_ROOT_NAME);
     }
 
     /**
@@ -106,9 +75,9 @@ public class JBossLogManagerFacade {
      *
      * @return the logger or {@code null} if the logger does not exist.
      */
-    public static Logger exists(String name) {
+    static Logger exists(String name) {
         final org.jboss.logmanager.Logger logger = LogContext.getLogContext().getLoggerIfExists(name);
-        return logger == null ? null : logger.getAttachment(LOGGER_KEY);
+        return logger == null ? null : getLogger(logger);
     }
 
     /**
@@ -119,12 +88,12 @@ public class JBossLogManagerFacade {
      *
      * @return the logger or {@code null} if no logger is attached.
      */
-    public static Logger getLogger(org.jboss.logmanager.Logger lmLogger) {
+    static Logger getLogger(org.jboss.logmanager.Logger lmLogger) {
         return lmLogger.getAttachment(LOGGER_KEY);
     }
 
     /**
-     * Gets the logger.
+     * Gets the logger or creates the logger via the .
      *
      * @param repository the repository the logger should be set to use.
      * @param name       the name of the logger.
@@ -132,18 +101,16 @@ public class JBossLogManagerFacade {
      *
      * @return the logger.
      */
-    public static Logger getLogger(final LoggerRepository repository, final String name, final LoggerFactory factory) {
-        final org.jboss.logmanager.Logger lmLogger = getJBossLogger(name);
-        Logger logger = lmLogger.getAttachment(LOGGER_KEY);
+    static Logger getOrCreateLogger(final LoggerRepository repository, final String name, final LoggerFactory factory) {
+        final org.jboss.logmanager.Logger lmLogger = getJBossLogger(LogContext.getLogContext(), name);
+        Logger logger = getLogger(lmLogger);
         if (logger == null) {
-            synchronized (LOGGER_KEY) {
-                logger = factory.makeNewLoggerInstance(name);
-                final Logger currentLogger = lmLogger.attachIfAbsent(LOGGER_KEY, logger);
-                if (currentLogger != null) {
-                    logger = currentLogger;
-                }
-                updateParents(repository, logger);
+            logger = factory.makeNewLoggerInstance(name);
+            final Logger currentLogger = lmLogger.attachIfAbsent(LOGGER_KEY, logger);
+            if (currentLogger != null) {
+                logger = currentLogger;
             }
+            updateParents(repository, logger);
         }
         return logger;
     }
@@ -153,14 +120,14 @@ public class JBossLogManagerFacade {
      *
      * @return a collection of the loggers.
      */
-    public static Collection<Logger> getLoggers() {
-        final LogContext context = LogContext.getLogContext();
-        final List<String> currentLoggerNames = context.getLoggingMXBean().getLoggerNames();
-        final List<Logger> currentLoggers = new ArrayList<Logger>(currentLoggerNames.size());
-        for (String name : currentLoggerNames) {
-            final org.jboss.logmanager.Logger lmLogger = context.getLoggerIfExists(name);
+    static Collection<Logger> getLoggers() {
+        final LogContext logContext = LogContext.getLogContext();
+        final List<String> loggerNames = logContext.getLoggingMXBean().getLoggerNames();
+        final List<Logger> currentLoggers = new ArrayList<Logger>(loggerNames.size());
+        for (String name : loggerNames) {
+            final org.jboss.logmanager.Logger lmLogger = logContext.getLoggerIfExists(name);
             if (lmLogger != null) {
-                final Logger logger = lmLogger.getAttachment(LOGGER_KEY);
+                final Logger logger = getLogger(lmLogger);
                 if (logger != null) {
                     currentLoggers.add(logger);
                 }
@@ -170,33 +137,18 @@ public class JBossLogManagerFacade {
     }
 
     /**
-     * Returns a collection of the loggers that exist.
-     *
-     * @return a collection of the loggers.
+     * This method is not thread safe.
      */
-    public static Collection<org.jboss.logmanager.Logger> getJBossLoggers() {
-        final LogContext context = LogContext.getLogContext();
-        final List<String> currentLoggerNames = context.getLoggingMXBean().getLoggerNames();
-        final List<org.jboss.logmanager.Logger> currentLoggers = new ArrayList<org.jboss.logmanager.Logger>(currentLoggerNames.size());
-        for (String name : currentLoggerNames) {
-            final org.jboss.logmanager.Logger lmLogger = context.getLoggerIfExists(name);
-            if (lmLogger != null) {
-                currentLoggers.add(lmLogger);
-            }
-        }
-        return currentLoggers;
-    }
-
-
     private static void updateParents(final LoggerRepository repository, final Logger cat) {
-        String name = cat.getName();
+        final LogContext logContext = LogContext.getLogContext();
+        final String name = cat.getName();
         int length = name.length();
         boolean addRootAsParent = true;
-        // if name = "w.x.y.z", loop thourgh "w.x.y", "w.x" and "w", but not "w.x.y.z"
+        // if name = "w.x.y.z", loop through "w.x.y", "w.x" and "w", but not "w.x.y.z"
         for (int i = name.lastIndexOf('.', length - 1); i >= 0; i = name.lastIndexOf('.', i - 1)) {
-            final org.jboss.logmanager.Logger lmLogger = LogContext.getLogContext().getLoggerIfExists(name.substring(0, i));
+            final org.jboss.logmanager.Logger lmLogger = logContext.getLoggerIfExists(name.substring(0, i));
             if (lmLogger != null) {
-                cat.parent = lmLogger.getAttachment(LOGGER_KEY);
+                cat.parent = getLogger(lmLogger);
                 if (cat.parent != null) {
                     addRootAsParent = false;
                     break;
