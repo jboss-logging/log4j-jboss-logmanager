@@ -1,11 +1,11 @@
 package org.apache.log4j;
 
-import static org.apache.log4j.JBossLogManagerFacade.JBL_ROOT_NAME;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Handler;
 
 import org.apache.log4j.spi.AppenderAttachable;
 import org.apache.log4j.spi.LoggingEvent;
@@ -32,39 +32,14 @@ final class JBossAppenderHandler extends ExtHandler {
         this.logger = logger;
     }
 
-    /**
-     * Creates a new handler for handling appenders if one does not already exist.
-     *
-     * @param logger the logger to attach the handler to and process appenders for
-     */
-    public static void createAndAttach(final Logger logger) {
-        if (logger.getAttachment(APPENDERS_KEY) == null) {
-            CopyOnWriteArrayList<Appender> list = new CopyOnWriteArrayList<Appender>();
-            final CopyOnWriteArrayList<Appender> existing = logger.attachIfAbsent(APPENDERS_KEY, list);
-            if (existing != null) {
-                list = existing;
-            } else {
-                // add handler
-                final JBossAppenderHandler handler = new JBossAppenderHandler(logger);
-                logger.addHandler(handler);
-            }
-        }
-    }
-
 
     @Override
     protected void doPublish(final ExtLogRecord record) {
-        String loggerName = record.getLoggerName();
-        if (loggerName == null) {
-            loggerName = JBL_ROOT_NAME;
-        }
-        if (loggerName.equals(logger.getName())) {
-            final LoggingEvent event = new LoggingEvent(record, JBossLogManagerFacade.getLogger(logger));
-            final List<Appender> appenders = getAllAppenders(logger);
-            for (Appender appender : appenders) {
-                if (new JBossFilterWrapper(appender.getFilter(), true).isLoggable(record)) {
-                    appender.doAppend(event);
-                }
+        final LoggingEvent event = new LoggingEvent(record, JBossLogManagerFacade.getLogger(logger));
+        final List<Appender> appenders = getAppenderList(logger);
+        for (Appender appender : appenders) {
+            if (new JBossFilterWrapper(appender.getFilter(), true).isLoggable(record)) {
+                appender.doAppend(event);
             }
         }
     }
@@ -111,6 +86,20 @@ final class JBossAppenderHandler extends ExtHandler {
      * @param appender the appender to attach.
      */
     public static void attachAppender(final Logger logger, final Appender appender) {
+        Handler[] oldHandlers;
+        Handler[] newHandlers;
+        CAS:
+        do {
+            oldHandlers = logger.getHandlers();
+            for (Handler handler : oldHandlers) {
+                if (handler instanceof JBossAppenderHandler) {
+                    break CAS;
+                }
+            }
+            final int size = oldHandlers.length;
+            newHandlers = Arrays.copyOf(oldHandlers, size + 1);
+            newHandlers[size] = new JBossAppenderHandler(logger);
+        } while (!logger.compareAndSetHandlers(oldHandlers, newHandlers));
         getAppenderList(logger).addIfAbsent(appender);
     }
 
@@ -127,39 +116,6 @@ final class JBossAppenderHandler extends ExtHandler {
             return Collections.emptyList();
         }
         return new ArrayList<Appender>(appenders);
-    }
-
-    /**
-     * Retrieves all the appenders that are associated with the logger and any parent loggers. If the {@link
-     * org.jboss.logmanager.Logger#getUseParentHandlers()} returns {@code false}, the chain is broken and no more
-     * appenders are returned.
-     *
-     * @param logger the logger to retrieve the appenders on.
-     *
-     * @return a collection of the appenders or an empty collection.
-     */
-    public static List<Appender> getAllAppenders(final Logger logger) {
-        final List<Appender> result = new ArrayList<Appender>();
-        getAllAppenders(logger, result);
-        return result;
-    }
-
-    /**
-     * Retrieves all the appenders that are associated with the logger and any parent loggers. If the {@link
-     * org.jboss.logmanager.Logger#getUseParentHandlers()} returns {@code false}, the chain is broken and no more
-     * appenders are returned.
-     *
-     * @param logger the logger to retrieve the appenders on.
-     * @param result the list that will have the appenders added to it.
-     */
-    static void getAllAppenders(final Logger logger, final List<Appender> result) {
-        result.addAll(getAppenderList(logger));
-        if (logger.getUseParentHandlers()) {
-            final Category category = JBossLogManagerFacade.getLogger(logger);
-            if (category != null && category.getParent() != null) {
-                getAllAppenders(category.getParent().jblmLogger, result);
-            }
-        }
     }
 
     /**
