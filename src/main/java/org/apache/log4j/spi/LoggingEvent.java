@@ -266,6 +266,7 @@ public class LoggingEvent implements Serializable {
         final long timeStamp = getField.get("timeStamp", -1L);
         final String threadName = (String) getField.get("threadName", null);
         final ThrowableInformation throwableInfo = (ThrowableInformation) getField.get("throwableInfo", ThrowableInformation.class);
+        cachedThrowableInformation = throwableInfo;
 
         final ExtLogRecord record = new ExtLogRecord(JBossLevelMapping.getLevelFor(level), renderedMessage, ExtLogRecord.FormatStyle.NO_FORMAT, Logger.class.getName());
         if (categoryName != null) record.setLoggerName(categoryName.toString());
@@ -291,6 +292,7 @@ public class LoggingEvent implements Serializable {
         putField.put("renderedMessage", logRecord.getFormattedMessage());
         putField.put("timeStamp", logRecord.getMillis());
         putField.put("threadName", logRecord.getThreadName());
+        getThrowableStrRep();
         putField.put("throwableInfo", getThrowableInformation());
         oos.writeFields();
         final Level level = getLevel();
