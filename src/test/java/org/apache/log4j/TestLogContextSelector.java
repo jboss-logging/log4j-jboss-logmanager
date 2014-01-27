@@ -23,7 +23,7 @@ public class TestLogContextSelector implements LogContextSelector {
         if (contexts.containsKey(name)) {
             return contexts.get(name);
         }
-        final TestLogContextSelector result = new TestLogContextSelector(LogContext.create());
+        final TestLogContextSelector result = new TestLogContextSelector(LogContext.create(true));
         contexts.put(name, result);
         return  result;
     }

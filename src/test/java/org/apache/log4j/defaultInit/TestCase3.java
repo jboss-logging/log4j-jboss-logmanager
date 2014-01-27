@@ -63,7 +63,7 @@ public class TestCase3 {
         assertTrue(rootIsConfigured);
         Enumeration e = root.getAllAppenders();
         Appender appender = (Appender) e.nextElement();
-        assertEquals(appender.getName(), "D3");
+        assertEquals("D3", appender.getName());
     }
 
 }

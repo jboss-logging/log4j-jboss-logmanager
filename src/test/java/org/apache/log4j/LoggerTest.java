@@ -134,15 +134,15 @@ public class LoggerTest {
         CountingAppender ca = new CountingAppender();
         a.addAppender(ca);
 
-        assertEquals(ca.counter, 0);
+        assertEquals(0, ca.counter);
         ab.debug(MSG);
-        assertEquals(ca.counter, 1);
+        assertEquals(1, ca.counter);
         ab.info(MSG);
-        assertEquals(ca.counter, 2);
+        assertEquals(2, ca.counter);
         ab.warn(MSG);
-        assertEquals(ca.counter, 3);
+        assertEquals(3, ca.counter);
         ab.error(MSG);
-        assertEquals(ca.counter, 4);
+        assertEquals(4, ca.counter);
 
         // Clean-up
         a.removeAllAppenders();
@@ -167,20 +167,20 @@ public class LoggerTest {
         a.addAppender(ca1);
         abc.addAppender(ca2);
 
-        assertEquals(ca1.counter, 0);
-        assertEquals(ca2.counter, 0);
+        assertEquals(0, ca1.counter);
+        assertEquals(0, ca2.counter);
 
         ab.debug(MSG);
-        assertEquals(ca1.counter, 1);
-        assertEquals(ca2.counter, 0);
+        assertEquals(1, ca1.counter);
+        assertEquals(0, ca2.counter);
 
         abc.debug(MSG);
-        assertEquals(ca1.counter, 2);
-        assertEquals(ca2.counter, 1);
+        assertEquals(2, ca1.counter);
+        assertEquals(1, ca2.counter);
 
         x.debug(MSG);
-        assertEquals(ca1.counter, 2);
-        assertEquals(ca2.counter, 1);
+        assertEquals(2, ca1.counter);
+        assertEquals(1, ca2.counter);
 
         // Clean-up
         a.removeAllAppenders();
@@ -208,27 +208,27 @@ public class LoggerTest {
         a.addAppender(caA);
         abc.addAppender(caABC);
 
-        assertEquals(caRoot.counter, 0);
-        assertEquals(caA.counter, 0);
-        assertEquals(caABC.counter, 0);
+        assertEquals(0, caRoot.counter);
+        assertEquals(0, caA.counter);
+        assertEquals(0, caABC.counter);
 
         ab.setAdditivity(false);
 
 
         a.debug(MSG);
-        assertEquals(caRoot.counter, 1);
-        assertEquals(caA.counter, 1);
-        assertEquals(caABC.counter, 0);
+        assertEquals(1, caRoot.counter);
+        assertEquals(1, caA.counter);
+        assertEquals(0, caABC.counter);
 
         ab.debug(MSG);
-        assertEquals(caRoot.counter, 1);
-        assertEquals(caA.counter, 1);
-        assertEquals(caABC.counter, 0);
+        assertEquals(1, caRoot.counter);
+        assertEquals(1, caA.counter);
+        assertEquals(0, caABC.counter);
 
         abc.debug(MSG);
-        assertEquals(caRoot.counter, 1);
-        assertEquals(caA.counter, 1);
-        assertEquals(caABC.counter, 1);
+        assertEquals(1, caRoot.counter);
+        assertEquals(1, caA.counter);
+        assertEquals(1, caABC.counter);
 
         // Clean-up
         a.removeAllAppenders();
@@ -247,59 +247,59 @@ public class LoggerTest {
         LoggerRepository h = LogManager.getLoggerRepository();
         //h.disableDebug();
         h.setThreshold(Level.INFO);
-        assertEquals(caRoot.counter, 0);
+        assertEquals(0, caRoot.counter);
 
         logger.debug(MSG);
-        assertEquals(caRoot.counter, 0);
+        assertEquals(0, caRoot.counter);
         logger.info(MSG);
-        assertEquals(caRoot.counter, 1);
+        assertEquals(1, caRoot.counter);
         logger.log(Level.WARN, MSG);
-        assertEquals(caRoot.counter, 2);
+        assertEquals(2, caRoot.counter);
         logger.warn(MSG);
-        assertEquals(caRoot.counter, 3);
+        assertEquals(3, caRoot.counter);
 
         //h.disableInfo();
         h.setThreshold((Level) Level.WARN);
         logger.debug(MSG);
-        assertEquals(caRoot.counter, 3);
+        assertEquals(3, caRoot.counter);
         logger.info(MSG);
-        assertEquals(caRoot.counter, 3);
+        assertEquals(3, caRoot.counter);
         logger.log(Level.WARN, MSG);
-        assertEquals(caRoot.counter, 4);
+        assertEquals(4, caRoot.counter);
         logger.error(MSG);
-        assertEquals(caRoot.counter, 5);
+        assertEquals(5, caRoot.counter);
         logger.log(Level.ERROR, MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
 
         //h.disableAll();
         h.setThreshold(Level.OFF);
         logger.debug(MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
         logger.info(MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
         logger.log(Level.WARN, MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
         logger.error(MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
         logger.log(Level.FATAL, MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
         logger.log(Level.FATAL, MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
 
         //h.disable(Level.FATAL);
         h.setThreshold(Level.OFF);
         logger.debug(MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
         logger.info(MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
         logger.log(Level.WARN, MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
         logger.error(MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
         logger.log(Level.ERROR, MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
         logger.log(Level.FATAL, MSG);
-        assertEquals(caRoot.counter, 6);
+        assertEquals(6, caRoot.counter);
     }
 
 
@@ -309,18 +309,18 @@ public class LoggerTest {
         logger = Logger.getRootLogger();
         logger.setResourceBundle(rbUS);
         ResourceBundle t = logger.getResourceBundle();
-        assertSame(t, rbUS);
+        assertSame(rbUS, t);
 
         Logger x = Logger.getLogger("x");
         Logger x_y = Logger.getLogger("x.y");
         Logger x_y_z = Logger.getLogger("x.y.z");
 
         t = x.getResourceBundle();
-        assertSame(t, rbUS);
+        assertSame(rbUS, t);
         t = x_y.getResourceBundle();
-        assertSame(t, rbUS);
+        assertSame(rbUS, t);
         t = x_y_z.getResourceBundle();
-        assertSame(t, rbUS);
+        assertSame(rbUS, t);
     }
 
     @Ignore("Setting resource bundles is not supported")
@@ -329,7 +329,7 @@ public class LoggerTest {
         logger = Logger.getRootLogger();
         logger.setResourceBundle(rbUS);
         ResourceBundle t = logger.getResourceBundle();
-        assertSame(t, rbUS);
+        assertSame(rbUS, t);
 
         Logger x = Logger.getLogger("x");
         Logger x_y = Logger.getLogger("x.y");
@@ -337,11 +337,11 @@ public class LoggerTest {
 
         x_y.setResourceBundle(rbFR);
         t = x.getResourceBundle();
-        assertSame(t, rbUS);
+        assertSame(rbUS, t);
         t = x_y.getResourceBundle();
-        assertSame(t, rbFR);
+        assertSame(rbFR, t);
         t = x_y_z.getResourceBundle();
-        assertSame(t, rbFR);
+        assertSame(rbFR, t);
     }
 
     @Ignore("Setting resource bundles is not supported")
@@ -350,7 +350,7 @@ public class LoggerTest {
         logger = Logger.getRootLogger();
         logger.setResourceBundle(rbUS);
         ResourceBundle t = logger.getResourceBundle();
-        assertSame(t, rbUS);
+        assertSame(rbUS, t);
 
         Logger x = Logger.getLogger("x");
         Logger x_y = Logger.getLogger("x.y");
@@ -359,11 +359,11 @@ public class LoggerTest {
         x_y.setResourceBundle(rbFR);
         x_y_z.setResourceBundle(rbCH);
         t = x.getResourceBundle();
-        assertSame(t, rbUS);
+        assertSame(rbUS, t);
         t = x_y.getResourceBundle();
-        assertSame(t, rbFR);
+        assertSame(rbFR, t);
         t = x_y_z.getResourceBundle();
-        assertSame(t, rbCH);
+        assertSame(rbCH, t);
     }
 
     @Test

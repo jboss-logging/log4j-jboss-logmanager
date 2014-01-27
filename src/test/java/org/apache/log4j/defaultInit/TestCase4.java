@@ -37,6 +37,7 @@ import org.junit.Test;
 import java.util.Enumeration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class TestCase4 {
@@ -65,8 +66,8 @@ public class TestCase4 {
         assertTrue(rootIsConfigured);
         Enumeration e = root.getAllAppenders();
         Appender appender = (Appender) e.nextElement();
-        assertEquals(appender.getName(), "D1");
-        assertEquals(e.hasMoreElements(), false);
+        assertEquals("D1", appender.getName());
+        assertFalse(e.hasMoreElements());
     }
 
 }
