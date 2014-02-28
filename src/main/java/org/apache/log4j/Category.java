@@ -37,6 +37,7 @@ import org.apache.log4j.spi.AppenderAttachable;
 import org.apache.log4j.spi.HierarchyEventListener;
 import org.apache.log4j.spi.LoggerRepository;
 import org.apache.log4j.spi.LoggingEvent;
+import org.jboss.logmanager.LogContext;
 
 public class Category implements AppenderAttachable {
     private static final Object LEVEL_LOCK = new Object();
@@ -50,12 +51,12 @@ public class Category implements AppenderAttachable {
     final org.jboss.logmanager.Logger jblmLogger;
 
     protected Category(String name) {
-        jblmLogger = JBossLogManagerFacade.getJBossLogger(name);
+        jblmLogger = JBossLogManagerFacade.getJBossLogger(LogContext.getLogContext(), name);
     }
 
     public void addAppender(Appender newAppender) {
         JBossAppenderHandler.attachAppender(jblmLogger, newAppender);
-        JBossLogManagerFacade.getLoggerRepository().fireAddAppenderEvent(this, newAppender);
+        getLoggerRepository().fireAddAppenderEvent(this, newAppender);
     }
 
     public void assertLog(boolean assertion, String msg) {
@@ -154,11 +155,11 @@ public class Category implements AppenderAttachable {
 
     @Deprecated
     public LoggerRepository getHierarchy() {
-        return JBossLogManagerFacade.getLoggerRepository();
+        return getLoggerRepository();
     }
 
     public LoggerRepository getLoggerRepository() {
-        return JBossLogManagerFacade.getLoggerRepository();
+        return LogManager.getLoggerRepository();
     }
 
     @Deprecated
@@ -301,7 +302,7 @@ public class Category implements AppenderAttachable {
 
     public void removeAllAppenders() {
         final List<Appender> removedAppenders = JBossAppenderHandler.removeAllAppenders(jblmLogger);
-        final LoggerRepository repository = JBossLogManagerFacade.getLoggerRepository();
+        final LoggerRepository repository = getLoggerRepository();
         for (Appender appender : removedAppenders) {
             fireRemoveAppenderEvent(repository, appender);
         }
@@ -310,7 +311,7 @@ public class Category implements AppenderAttachable {
     public void removeAppender(Appender appender) {
         if (appender != null) {
             if (JBossAppenderHandler.removeAppender(jblmLogger, appender)) {
-                fireRemoveAppenderEvent(JBossLogManagerFacade.getLoggerRepository(), appender);
+                fireRemoveAppenderEvent(getLoggerRepository(), appender);
             }
         }
     }
