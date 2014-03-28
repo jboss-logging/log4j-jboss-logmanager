@@ -87,6 +87,26 @@ public class LoggerTest {
         a2 = null;
     }
 
+    @Test
+    public void testCreationOrder() {
+
+        Logger a = Logger.getLogger("a");
+        Logger abc = Logger.getLogger("a.b.c");
+        Logger ab = Logger.getLogger("a.b");
+
+        assertEquals("", a.getParent().getName());
+        assertEquals("a", ab.getParent().getName());
+        assertEquals("a.b", abc.getParent().getName());
+
+        Logger xy = Logger.getLogger("x.y");
+        assertEquals("", xy.getParent().getName());
+        Logger xyz = Logger.getLogger("x.y.z");
+        assertEquals("x.y", xyz.getParent().getName());
+
+        Logger.getLogger("d.e.f");
+        Logger.getLogger("d");
+    }
+
     /**
      * Add an appender and see if it can be retrieved.
      */

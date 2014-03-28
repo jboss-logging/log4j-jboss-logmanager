@@ -2,7 +2,12 @@ package org.apache.log4j;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.log4j.spi.LoggerFactory;
 import org.apache.log4j.spi.LoggerRepository;
@@ -22,6 +27,7 @@ public class JBossLogManagerFacade {
 
     private static final AttachmentKey<Logger> LOGGER_KEY = new AttachmentKey<Logger>();
     private static final AttachmentKey<Hierarchy> HIERARCHY_KEY = new AttachmentKey<Hierarchy>();
+    private static final AttachmentKey<LoggerNode> LOGGER_NODE_KEY = new AttachmentKey<LoggerNode>();
 
     private JBossLogManagerFacade() {
     }
@@ -110,7 +116,11 @@ public class JBossLogManagerFacade {
             if (currentLogger != null) {
                 logger = currentLogger;
             }
-            updateParents(repository, logger);
+            final LoggerNode loggerNode = lmLogger.detach(LOGGER_NODE_KEY);
+            if (loggerNode != null) {
+                updateChildren(loggerNode, logger);
+            }
+            updateParents(repository, logger, lmLogger);
         }
         return logger;
     }
@@ -139,17 +149,30 @@ public class JBossLogManagerFacade {
     /**
      * This method is not thread safe.
      */
-    private static void updateParents(final LoggerRepository repository, final Logger cat) {
-        final LogContext logContext = LogContext.getLogContext();
+    @SuppressWarnings("unchecked")
+    private static void updateParents(final LoggerRepository repository, final Logger cat, final org.jboss.logmanager.Logger parentLogger) {
+        final LogContext logContext = parentLogger.getLogContext();
         final String name = cat.getName();
         int length = name.length();
         boolean addRootAsParent = true;
         // if name = "w.x.y.z", loop through "w.x.y", "w.x" and "w", but not "w.x.y.z"
         for (int i = name.lastIndexOf('.', length - 1); i >= 0; i = name.lastIndexOf('.', i - 1)) {
-            final org.jboss.logmanager.Logger lmLogger = logContext.getLoggerIfExists(name.substring(0, i));
+            final String loggerName = name.substring(0, i);
+            final org.jboss.logmanager.Logger lmLogger = logContext.getLoggerIfExists(loggerName);
+            // This should never be null, but we'll be safe
             if (lmLogger != null) {
                 cat.parent = getLogger(lmLogger);
-                if (cat.parent != null) {
+                if (cat.parent == null) {
+                    final LoggerNode loggerNode = lmLogger.getAttachment(LOGGER_NODE_KEY);
+                    if (loggerNode == null) {
+                        final LoggerNode appearing = lmLogger.attachIfAbsent(LOGGER_NODE_KEY, new LoggerNode(cat));
+                        if (appearing != null) {
+                            appearing.add(cat);
+                        }
+                    } else {
+                        loggerNode.add(cat);
+                    }
+                } else {
                     addRootAsParent = false;
                     break;
                 }
@@ -157,5 +180,46 @@ public class JBossLogManagerFacade {
         }
         // If we could not find any existing parents, then link with root.
         if (addRootAsParent) cat.parent = repository.getRootLogger();
+    }
+
+    private static void updateChildren(final LoggerNode loggerNode, final Logger logger) {
+
+        for (Logger l : loggerNode) {
+            // Note below was taken directly from log4j
+
+            // Unless this child already points to a correct (lower) parent,
+            // make cat.parent point to l.parent and l.parent to cat.
+            if (!l.parent.getName().startsWith(logger.getName())) {
+                logger.parent = l.parent;
+                l.parent = logger;
+            }
+        }
+    }
+
+    private static class LoggerNode implements Iterable<Logger> {
+        private final Set<Logger> loggers;
+
+        public LoggerNode(final Logger logger) {
+            loggers = new ConcurrentSkipListSet<Logger>(LoggerComparator.INSTANCE);
+            loggers.add(logger);
+        }
+
+        public void add(final Logger logger) {
+            loggers.add(logger);
+        }
+
+        @Override
+        public Iterator<Logger> iterator() {
+            return new LinkedHashSet<Logger>(loggers).iterator();
+        }
+    }
+
+    private static class LoggerComparator implements Comparator<Logger> {
+        static final LoggerComparator INSTANCE = new LoggerComparator();
+
+        @Override
+        public int compare(final Logger o1, final Logger o2) {
+            return o1.getName().compareTo(o2.getName());
+        }
     }
 }
