@@ -1,5 +1,7 @@
 package org.apache.log4j;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -23,7 +25,25 @@ public class JBossLogManagerFacade {
     private static final AttachmentKey<Logger> LOGGER_KEY = new AttachmentKey<Logger>();
     private static final AttachmentKey<Hierarchy> HIERARCHY_KEY = new AttachmentKey<Hierarchy>();
 
+    private static final PrivilegedAction<LogContext> LOG_CONTEXT_ACTION = new PrivilegedAction<LogContext>() {
+        @Override
+        public LogContext run() {
+            return LogContext.getLogContext();
+        }
+    };
+
     private JBossLogManagerFacade() {
+    }
+
+    /**
+     * Returns a JBoss Log Manger logger.
+     *
+     * @param name the name of the logger.
+     *
+     * @return a logger.
+     */
+    static org.jboss.logmanager.Logger getJBossLogger(final String name) {
+        return getJBossLogger(getLogContext(), name);
     }
 
     /**
@@ -39,32 +59,48 @@ public class JBossLogManagerFacade {
     }
 
     /**
-     * Gets the log4j logger repository for the log context.
-     *
-     * @param logContext the log context which the log4j repository is located on or should be created on
+     * Gets the log4j logger repository using the default log context.
      *
      * @return the log4j logger repository
      */
-    public static LoggerRepository getLoggerRepository(LogContext logContext) {
-        final org.jboss.logmanager.Logger jbossRoot = getJBossLogger(logContext, JBL_ROOT_NAME);
-        Hierarchy hierarchy = jbossRoot.getAttachment(HIERARCHY_KEY);
-        if (hierarchy == null) {
-            // Always attach the root logger
-            Logger root = getLogger(jbossRoot);
-            if (root == null) {
-                root = new RootLogger(JBossLevelMapping.getPriorityFor(jbossRoot.getLevel()));
-                final Logger appearing = jbossRoot.attachIfAbsent(LOGGER_KEY, root);
-                if (appearing != null) {
-                    root = appearing;
+    static LoggerRepository getLoggerRepository() {
+        return getLoggerRepository(null);
+    }
+
+    /**
+     * Gets the log4j logger repository for the log context.
+     *
+     * @param logContext the log context which the log4j repository is located on or should be created on or {@code
+     *                   null} to create the repository on the default log context
+     *
+     * @return the log4j logger repository
+     */
+    public static LoggerRepository getLoggerRepository(final LogContext logContext) {
+        return doPrivileged(new PrivilegedAction<Hierarchy>() {
+            @Override
+            public Hierarchy run() {
+                final LogContext lc = logContext == null ? LogContext.getLogContext() : logContext;
+                final org.jboss.logmanager.Logger jbossRoot = getJBossLogger(lc, JBL_ROOT_NAME);
+                Hierarchy hierarchy = jbossRoot.getAttachment(HIERARCHY_KEY);
+                if (hierarchy == null) {
+                    // Always attach the root logger
+                    Logger root = jbossRoot.getAttachment(LOGGER_KEY);
+                    if (root == null) {
+                        root = new RootLogger(JBossLevelMapping.getPriorityFor(jbossRoot.getLevel()));
+                        final Logger appearing = jbossRoot.attachIfAbsent(LOGGER_KEY, root);
+                        if (appearing != null) {
+                            root = appearing;
+                        }
+                    }
+                    hierarchy = new Hierarchy(root);
+                    final Hierarchy appearing = jbossRoot.attachIfAbsent(HIERARCHY_KEY, hierarchy);
+                    if (appearing != null) {
+                        hierarchy = appearing;
+                    }
                 }
+                return hierarchy;
             }
-            hierarchy = new Hierarchy(root);
-            final Hierarchy appearing = jbossRoot.attachIfAbsent(HIERARCHY_KEY, hierarchy);
-            if (appearing != null) {
-                hierarchy = appearing;
-            }
-        }
-        return hierarchy;
+        });
     }
 
     /**
@@ -75,8 +111,9 @@ public class JBossLogManagerFacade {
      *
      * @return the logger or {@code null} if the logger does not exist.
      */
+
     static Logger exists(String name) {
-        final org.jboss.logmanager.Logger logger = LogContext.getLogContext().getLoggerIfExists(name);
+        final org.jboss.logmanager.Logger logger = getLogContext().getLoggerIfExists(name);
         return logger == null ? null : getLogger(logger);
     }
 
@@ -89,7 +126,7 @@ public class JBossLogManagerFacade {
      * @return the logger or {@code null} if no logger is attached.
      */
     static Logger getLogger(org.jboss.logmanager.Logger lmLogger) {
-        return lmLogger.getAttachment(LOGGER_KEY);
+        return getAttachment(lmLogger, LOGGER_KEY);
     }
 
     /**
@@ -102,11 +139,11 @@ public class JBossLogManagerFacade {
      * @return the logger.
      */
     static Logger getOrCreateLogger(final LoggerRepository repository, final String name, final LoggerFactory factory) {
-        final org.jboss.logmanager.Logger lmLogger = getJBossLogger(LogContext.getLogContext(), name);
+        final org.jboss.logmanager.Logger lmLogger = getJBossLogger(name);
         Logger logger = getLogger(lmLogger);
         if (logger == null) {
             logger = factory.makeNewLoggerInstance(name);
-            final Logger currentLogger = lmLogger.attachIfAbsent(LOGGER_KEY, logger);
+            final Logger currentLogger = attachIfAbsent(lmLogger, LOGGER_KEY, logger);
             if (currentLogger != null) {
                 logger = currentLogger;
             }
@@ -121,7 +158,7 @@ public class JBossLogManagerFacade {
      * @return a collection of the loggers.
      */
     static Collection<Logger> getLoggers() {
-        final LogContext logContext = LogContext.getLogContext();
+        final LogContext logContext = getLogContext();
         final List<String> loggerNames = logContext.getLoggingMXBean().getLoggerNames();
         final List<Logger> currentLoggers = new ArrayList<Logger>(loggerNames.size());
         for (String name : loggerNames) {
@@ -140,7 +177,7 @@ public class JBossLogManagerFacade {
      * This method is not thread safe.
      */
     private static void updateParents(final LoggerRepository repository, final Logger cat) {
-        final LogContext logContext = LogContext.getLogContext();
+        final LogContext logContext = getLogContext();
         final String name = cat.getName();
         int length = name.length();
         boolean addRootAsParent = true;
@@ -157,5 +194,34 @@ public class JBossLogManagerFacade {
         }
         // If we could not find any existing parents, then link with root.
         if (addRootAsParent) cat.parent = repository.getRootLogger();
+    }
+
+    private static LogContext getLogContext() {
+        return doPrivileged(LOG_CONTEXT_ACTION);
+    }
+
+    private static <T> T getAttachment(final org.jboss.logmanager.Logger logger, final AttachmentKey<T> key) {
+        return doPrivileged(new PrivilegedAction<T>() {
+            @Override
+            public T run() {
+                return logger.getAttachment(key);
+            }
+        });
+    }
+
+    private static <T> T attachIfAbsent(final org.jboss.logmanager.Logger logger, final AttachmentKey<T> key, final T value) {
+        return doPrivileged(new PrivilegedAction<T>() {
+            @Override
+            public T run() {
+                return logger.attachIfAbsent(key, value);
+            }
+        });
+    }
+
+    private static <T> T doPrivileged(final PrivilegedAction<T> action) {
+        if (System.getSecurityManager() == null) {
+            return action.run();
+        }
+        return AccessController.doPrivileged(action);
     }
 }

@@ -39,7 +39,6 @@ import org.apache.log4j.spi.LoggerRepository;
 import org.apache.log4j.spi.RendererSupport;
 import org.apache.log4j.spi.ThrowableRenderer;
 import org.apache.log4j.spi.ThrowableRendererSupport;
-import org.jboss.logmanager.LogContext;
 
 /**
  * Our replacement for the log4j {@code Hierarchy} class.  We redirect management of the hierarchy
@@ -55,7 +54,7 @@ public class Hierarchy implements LoggerRepository, RendererSupport, ThrowableRe
 
     public Hierarchy(Logger root) {
         listeners = new CopyOnWriteArraySet<HierarchyEventListener>();
-        jblmRootLogger = JBossLogManagerFacade.getJBossLogger(LogContext.getLogContext(), JBossLogManagerFacade.JBL_ROOT_NAME);
+        jblmRootLogger = JBossLogManagerFacade.getJBossLogger(JBossLogManagerFacade.JBL_ROOT_NAME);
         jblmRootLogger.setLevel(JBossLevelMapping.getLevelFor(root.getLevel()));
         defaultFactory = new DefaultCategoryFactory();
         rendererMap = new RendererMap();
