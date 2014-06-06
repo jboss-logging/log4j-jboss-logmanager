@@ -26,6 +26,8 @@
 
 package org.apache.log4j;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -37,7 +39,6 @@ import org.apache.log4j.spi.AppenderAttachable;
 import org.apache.log4j.spi.HierarchyEventListener;
 import org.apache.log4j.spi.LoggerRepository;
 import org.apache.log4j.spi.LoggingEvent;
-import org.jboss.logmanager.LogContext;
 
 public class Category implements AppenderAttachable {
     private static final Object LEVEL_LOCK = new Object();
@@ -51,11 +52,12 @@ public class Category implements AppenderAttachable {
     final org.jboss.logmanager.Logger jblmLogger;
 
     protected Category(String name) {
-        jblmLogger = JBossLogManagerFacade.getJBossLogger(LogContext.getLogContext(), name);
+        jblmLogger = JBossLogManagerFacade.getJBossLogger(name);
     }
 
+
     public void addAppender(Appender newAppender) {
-        JBossAppenderHandler.attachAppender(jblmLogger, newAppender);
+        Appenders.attachAppender(jblmLogger, newAppender);
         getLoggerRepository().fireAddAppenderEvent(this, newAppender);
     }
 
@@ -72,7 +74,7 @@ public class Category implements AppenderAttachable {
     }
 
     void closeNestedAppenders() {
-        JBossAppenderHandler.closeAppenders(jblmLogger);
+        Appenders.closeAppenders(jblmLogger);
     }
 
     public void debug(Object message) {
@@ -124,7 +126,7 @@ public class Category implements AppenderAttachable {
     }
 
     public Enumeration getAllAppenders() {
-        final List<Appender> appenders = JBossAppenderHandler.getAppenders(jblmLogger);
+        final List<Appender> appenders = Appenders.getAppenders(jblmLogger);
         if (appenders.isEmpty()) {
             return NullEnumeration.getInstance();
         }
@@ -132,7 +134,7 @@ public class Category implements AppenderAttachable {
     }
 
     public Appender getAppender(String name) {
-        return JBossAppenderHandler.getAppender(jblmLogger, name);
+        return Appenders.getAppender(jblmLogger, name);
     }
 
     public Level getEffectiveLevel() {
@@ -183,9 +185,21 @@ public class Category implements AppenderAttachable {
     public final Level getLevel() {
         synchronized (LEVEL_LOCK) {
             if (level != null) {
+                // Check to see if the level was changed on the JBoss LogManger logger and set to match the current level
                 final Level currentLevel = JBossLevelMapping.getPriorityFor(jblmLogger.getLevel());
                 if (currentLevel.toInt() != level.toInt()) {
-                    jblmLogger.setLevel(JBossLevelMapping.getLevelFor(level));
+                    // It's likely this shouldn't happen, but to be safe we should run in a privilege block
+                    if (System.getSecurityManager() == null) {
+                        jblmLogger.setLevel(JBossLevelMapping.getLevelFor(level));
+                    } else {
+                        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                            @Override
+                            public Object run() {
+                                jblmLogger.setLevel(JBossLevelMapping.getLevelFor(level));
+                                return null;
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -235,7 +249,7 @@ public class Category implements AppenderAttachable {
     }
 
     public boolean isAttached(Appender appender) {
-        return JBossAppenderHandler.isAppenderAttached(jblmLogger, appender);
+        return Appenders.isAppenderAttached(jblmLogger, appender);
     }
 
     public boolean isDebugEnabled() {
@@ -301,7 +315,7 @@ public class Category implements AppenderAttachable {
     }
 
     public void removeAllAppenders() {
-        final List<Appender> removedAppenders = JBossAppenderHandler.removeAllAppenders(jblmLogger);
+        final List<Appender> removedAppenders = Appenders.removeAllAppenders(jblmLogger);
         final LoggerRepository repository = getLoggerRepository();
         for (Appender appender : removedAppenders) {
             fireRemoveAppenderEvent(repository, appender);
@@ -310,7 +324,7 @@ public class Category implements AppenderAttachable {
 
     public void removeAppender(Appender appender) {
         if (appender != null) {
-            if (JBossAppenderHandler.removeAppender(jblmLogger, appender)) {
+            if (Appenders.removeAppender(jblmLogger, appender)) {
                 fireRemoveAppenderEvent(getLoggerRepository(), appender);
             }
         }
@@ -318,7 +332,7 @@ public class Category implements AppenderAttachable {
 
     public void removeAppender(String name) {
         if (name != null) {
-            removeAppender(JBossAppenderHandler.getAppender(jblmLogger, name));
+            removeAppender(Appenders.getAppender(jblmLogger, name));
         }
     }
 

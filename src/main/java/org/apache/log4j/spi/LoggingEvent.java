@@ -246,11 +246,31 @@ public class LoggingEvent implements Serializable {
         if (levelClassName == null) {
             level = Level.toLevel(levelId);
         } else {
-            @SuppressWarnings("unchecked")
-            final Class<? extends Level> levelClass = Loader.loadClass(levelClassName).asSubclass(Level.class);
+            final SecurityManager sm = System.getSecurityManager();
             final Method method;
             try {
-                method = levelClass.getDeclaredMethod("toLevel", int.class);
+                if (sm == null) {
+                    @SuppressWarnings("unchecked")
+                    final Class<? extends Level> levelClass = Loader.loadClass(levelClassName).asSubclass(Level.class);
+                    method = levelClass.getDeclaredMethod("toLevel", int.class);
+                } else {
+                    method = AccessController.doPrivileged(new PrivilegedAction<Method>() {
+                        @Override
+                        public Method run() {
+                            try {
+                                @SuppressWarnings("unchecked")
+                                final Class<? extends Level> levelClass = Loader.loadClass(levelClassName).asSubclass(Level.class);
+                                return levelClass.getDeclaredMethod("toLevel", int.class);
+                            } catch (NoSuchMethodException e) {
+                                // Just rethrow and catch below
+                                throw new RuntimeException(e);
+                            } catch (ClassNotFoundException e) {
+                                // Just rethrow and catch below
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    });
+                }
                 level = (Level) method.invoke(null, Integer.valueOf(levelId));
             } catch (Exception e) {
                 // match the log4j message
