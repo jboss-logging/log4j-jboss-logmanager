@@ -105,6 +105,8 @@
                                         <exclude>org/apache/log4j/Hierarchy$*.class</exclude>
                                         <exclude>org/apache/log4j/Category.class</exclude>
                                         <exclude>org/apache/log4j/Category$*.class</exclude>
+                                        <exclude>org/apache/log4j/ConsoleAppender.class</exclude>
+                                        <exclude>org/apache/log4j/ConsoleAppender$*.class</exclude>
                                         <exclude>org/apache/log4j/Logger.class</exclude>
                                         <exclude>org/apache/log4j/Logger$*.class</exclude>
                                         <exclude>org/apache/log4j/LogManager.class</exclude>
