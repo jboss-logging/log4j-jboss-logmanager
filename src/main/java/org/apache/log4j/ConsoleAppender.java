@@ -33,142 +33,143 @@ import org.apache.log4j.helpers.LogLog;
  * ConsoleAppender appends log events to <code>System.out</code> or
  * <code>System.err</code> using a layout specified by the user. The
  * default target is <code>System.out</code>.
+ * <p>
+ * Modification was done in JBoss fork to use the real <strong>stdout</strong>/<strong>stderr</strong>
+ * via <code>FileDescriptor.out</code>/<code>FileDescriptor.err</code> instead of
+ * <code>System.out</code>/<code>System.err</code>, because in some cases, the standard
+ * stream may be reassigned.
+ * </p>
  *
- * <p>
- * <p>
- *    Modification was done in JBoss fork to use the real <strong>stdout</strong>/<strong>stderr</strong>
- *    via <code>FileDescriptor.out</code>/<code>FileDescriptor.err</code> instead of
- *    <code>System.out</code>/<code>System.err</code>, because in some cases, the standard
- *    stream may be reassigned.
- * <p>
  * @author Ceki G&uuml;lc&uuml;
  * @author Curt Arnold
  * @author <a href="mailto:lgao@redhat.com">Lin Gao</a>
- * @since 1.1 */
+ * @since 1.1
+ */
 public class ConsoleAppender extends WriterAppender {
 
-  public static final String SYSTEM_OUT = "System.out";
-  public static final String SYSTEM_ERR = "System.err";
+    public static final String SYSTEM_OUT = "System.out";
+    public static final String SYSTEM_ERR = "System.err";
 
-  protected String target = SYSTEM_OUT;
+    protected String target = SYSTEM_OUT;
 
-  /**
-   *  Determines if the appender honors reassignments of System.out
-   *  or System.err made after configuration.
-   */
-  private boolean follow = false;
+    /**
+     * Determines if the appender honors reassignments of System.out
+     * or System.err made after configuration.
+     */
+    private boolean follow = false;
 
-  /**
-    * Constructs an unconfigured appender.
-    */
-  public ConsoleAppender() {
-  }
+    /**
+     * Constructs an unconfigured appender.
+     */
+    public ConsoleAppender() {
+    }
 
     /**
      * Creates a configured appender.
      *
      * @param layout layout, may not be null.
      */
-  public ConsoleAppender(Layout layout) {
-    this(layout, SYSTEM_OUT);
-  }
+    public ConsoleAppender(Layout layout) {
+        this(layout, SYSTEM_OUT);
+    }
 
     /**
-     *   Creates a configured appender.
+     * Creates a configured appender.
+     *
      * @param layout layout, may not be null.
      * @param target target, either "System.err" or "System.out".
      */
-  public ConsoleAppender(Layout layout, String target) {
-    setLayout(layout);
-    setTarget(target);
-    activateOptions();
-  }
-
-/**
-   *  Sets the value of the <b>Target</b> option. Recognized values
-   *  are "System.out" and "System.err". Any other value will be
-   *  ignored.
-   * */
-  public
-  void setTarget(String value) {
-    String v = value.trim();
-
-    if (SYSTEM_OUT.equalsIgnoreCase(v)) {
-      target = SYSTEM_OUT;
-    } else if (SYSTEM_ERR.equalsIgnoreCase(v)) {
-      target = SYSTEM_ERR;
-    } else {
-      targetWarn(value);
+    public ConsoleAppender(Layout layout, String target) {
+        setLayout(layout);
+        setTarget(target);
+        activateOptions();
     }
-  }
 
-  /**
-   * Returns the current value of the <b>Target</b> property. The
-   * default value of the option is "System.out".
-   *
-   * See also {@link #setTarget}.
-   * */
-  public
-  String getTarget() {
-    return target;
-  }
+    /**
+     * Sets the value of the <b>Target</b> option. Recognized values
+     * are "System.out" and "System.err". Any other value will be
+     * ignored.
+     */
+    public void setTarget(String value) {
+        String v = value.trim();
 
-  /**
-   *  Sets whether the appender honors reassignments of System.out
-   *  or System.err made after configuration.
-   *  <p>
-   *  <strong>Note:</strong> The follow value is not used and streams will always be closed and recreated if necessary.
-   *  </p>
-   *
-   *  @param newValue if true, appender will use value of System.out or
-   *  System.err in force at the time when logging events are appended.
-   *  @since 1.2.13
-   */
-  public final void setFollow(final boolean newValue) {
-     follow = newValue;
-  }
+        if (SYSTEM_OUT.equalsIgnoreCase(v)) {
+            target = SYSTEM_OUT;
+        } else if (SYSTEM_ERR.equalsIgnoreCase(v)) {
+            target = SYSTEM_ERR;
+        } else {
+            targetWarn(value);
+        }
+    }
 
-  /**
-   *  Gets whether the appender honors reassignments of System.out
-   *  or System.err made after configuration.
-   *  <p>
-   *  <strong>Note:</strong> The follow value is not used and streams will always be closed and recreated if necessary.
-   *  </p>
-   *
-   *  @return true if appender will use value of System.out or
-   *  System.err in force at the time when logging events are appended.
-   *  @since 1.2.13
-   */
-  public final boolean getFollow() {
-      return follow;
-  }
+    /**
+     * Returns the current value of the <b>Target</b> property. The
+     * default value of the option is "System.out".
+     *
+     * See also {@link #setTarget}.
+     */
+    public String getTarget() {
+        return target;
+    }
 
-  void targetWarn(String val) {
-    LogLog.warn("["+val+"] should be System.out or System.err.");
-    LogLog.warn("Using previously set target, System.out by default.");
-  }
+    /**
+     * Sets whether the appender honors reassignments of System.out
+     * or System.err made after configuration.
+     * <p>
+     * <strong>Note:</strong> The follow value is not used and streams will always be closed and recreated if
+     * necessary.
+     * </p>
+     *
+     * @param newValue if true, appender will use value of System.out or
+     *                 System.err in force at the time when logging events are appended.
+     *
+     * @since 1.2.13
+     */
+    public final void setFollow(final boolean newValue) {
+        follow = newValue;
+    }
 
-  /**
-    *   Prepares the appender for use.
-    */
-   public void activateOptions() {
-       if (target.equals(SYSTEM_ERR)) {
-           setWriter(createWriter(new SystemErrStream()));
-       } else {
-           setWriter(createWriter(new SystemOutStream()));
-       }
+    /**
+     * Gets whether the appender honors reassignments of System.out
+     * or System.err made after configuration.
+     * <p>
+     * <strong>Note:</strong> The follow value is not used and streams will always be closed and recreated if
+     * necessary.
+     * </p>
+     *
+     * @return true if appender will use value of System.out or
+     * System.err in force at the time when logging events are appended.
+     *
+     * @since 1.2.13
+     */
+    public final boolean getFollow() {
+        return follow;
+    }
+
+    void targetWarn(String val) {
+        LogLog.warn("[" + val + "] should be System.out or System.err.");
+        LogLog.warn("Using previously set target, System.out by default.");
+    }
+
+    /**
+     * Prepares the appender for use.
+     */
+    public void activateOptions() {
+        if (target.equals(SYSTEM_ERR)) {
+            setWriter(createWriter(new SystemErrStream()));
+        } else {
+            setWriter(createWriter(new SystemOutStream()));
+        }
 
         super.activateOptions();
-  }
+    }
 
-  /**
-   *  {@inheritDoc}
-   */
-  protected
-  final
-  void closeWriter() {
-      super.closeWriter();
-  }
+    /**
+     * {@inheritDoc}
+     */
+    protected final void closeWriter() {
+        super.closeWriter();
+    }
 
     private static PrintStream createPrintStream(final FileDescriptor fd) {
         return new PrintStream(new BufferedOutputStream(new FileOutputStream(fd), 128));
@@ -178,10 +179,10 @@ public class ConsoleAppender extends WriterAppender {
     /**
      * An implementation of OutputStream that redirects to the
      * current System.err.
-     *
      */
     private static class SystemErrStream extends OutputStream {
         private final PrintStream err;
+
         public SystemErrStream() {
             err = createPrintStream(FileDescriptor.err);
         }
@@ -198,8 +199,7 @@ public class ConsoleAppender extends WriterAppender {
             err.write(b);
         }
 
-        public void write(final byte[] b, final int off, final int len)
-            throws IOException {
+        public void write(final byte[] b, final int off, final int len) throws IOException {
             err.write(b, off, len);
         }
 
@@ -211,10 +211,10 @@ public class ConsoleAppender extends WriterAppender {
     /**
      * An implementation of OutputStream that redirects to the
      * current System.out.
-     *
      */
     private static class SystemOutStream extends OutputStream {
         private final PrintStream out;
+
         public SystemOutStream() {
             out = createPrintStream(FileDescriptor.out);
         }
@@ -231,8 +231,7 @@ public class ConsoleAppender extends WriterAppender {
             out.write(b);
         }
 
-        public void write(final byte[] b, final int off, final int len)
-            throws IOException {
+        public void write(final byte[] b, final int off, final int len) throws IOException {
             out.write(b, off, len);
         }
 
