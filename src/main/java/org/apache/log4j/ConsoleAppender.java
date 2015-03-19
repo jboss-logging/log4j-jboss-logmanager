@@ -50,11 +50,6 @@ public class ConsoleAppender extends WriterAppender {
   public static final String SYSTEM_OUT = "System.out";
   public static final String SYSTEM_ERR = "System.err";
 
-  private static final PrintStream out =
-  new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.out), 128), true);
-  private static final PrintStream err =
-  new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.err), 128), true);
-
   protected String target = SYSTEM_OUT;
 
   /**
@@ -121,6 +116,10 @@ public class ConsoleAppender extends WriterAppender {
   /**
    *  Sets whether the appender honors reassignments of System.out
    *  or System.err made after configuration.
+   *  <p>
+   *  <strong>Note:</strong> The follow value is not used and streams will always be closed and recreated if necessary.
+   *  </p>
+   *
    *  @param newValue if true, appender will use value of System.out or
    *  System.err in force at the time when logging events are appended.
    *  @since 1.2.13
@@ -132,6 +131,10 @@ public class ConsoleAppender extends WriterAppender {
   /**
    *  Gets whether the appender honors reassignments of System.out
    *  or System.err made after configuration.
+   *  <p>
+   *  <strong>Note:</strong> The follow value is not used and streams will always be closed and recreated if necessary.
+   *  </p>
+   *
    *  @return true if appender will use value of System.out or
    *  System.err in force at the time when logging events are appended.
    *  @since 1.2.13
@@ -149,19 +152,11 @@ public class ConsoleAppender extends WriterAppender {
     *   Prepares the appender for use.
     */
    public void activateOptions() {
-        if (follow) {
-            if (target.equals(SYSTEM_ERR)) {
-               setWriter(createWriter(new SystemErrStream()));
-            } else {
-               setWriter(createWriter(new SystemOutStream()));
-            }
-        } else {
-            if (target.equals(SYSTEM_ERR)) {
-               setWriter(createWriter(err));
-            } else {
-               setWriter(createWriter(out));
-            }
-        }
+       if (target.equals(SYSTEM_ERR)) {
+           setWriter(createWriter(new SystemErrStream()));
+       } else {
+           setWriter(createWriter(new SystemOutStream()));
+       }
 
         super.activateOptions();
   }
@@ -172,10 +167,12 @@ public class ConsoleAppender extends WriterAppender {
   protected
   final
   void closeWriter() {
-     if (follow) {
-        super.closeWriter();
-     }
+      super.closeWriter();
   }
+
+    private static PrintStream createPrintStream(final FileDescriptor fd) {
+        return new PrintStream(new BufferedOutputStream(new FileOutputStream(fd), 128));
+    }
 
 
     /**
@@ -184,10 +181,13 @@ public class ConsoleAppender extends WriterAppender {
      *
      */
     private static class SystemErrStream extends OutputStream {
+        private final PrintStream err;
         public SystemErrStream() {
+            err = createPrintStream(FileDescriptor.err);
         }
 
         public void close() {
+            err.close();
         }
 
         public void flush() {
@@ -214,10 +214,13 @@ public class ConsoleAppender extends WriterAppender {
      *
      */
     private static class SystemOutStream extends OutputStream {
+        private final PrintStream out;
         public SystemOutStream() {
+            out = createPrintStream(FileDescriptor.out);
         }
 
         public void close() {
+            out.close();
         }
 
         public void flush() {
