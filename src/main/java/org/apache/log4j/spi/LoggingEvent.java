@@ -227,14 +227,16 @@ public class LoggingEvent implements Serializable {
     }
 
     public ThrowableInformation getThrowableInformation() {
-        if (cachedThrowableInformation == null) {
-            cachedThrowableInformation = new ThrowableInformation(logRecord.getThrown(), logger);
+        final Throwable thrown = logRecord.getThrown();
+        if (cachedThrowableInformation == null && thrown != null) {
+            cachedThrowableInformation = new ThrowableInformation(thrown, logger);
         }
         return cachedThrowableInformation;
     }
 
     public String[] getThrowableStrRep() {
-        return getThrowableInformation().getThrowableStrRep();
+        final ThrowableInformation cachedThrowableInformation = getThrowableInformation();
+        return cachedThrowableInformation == null ? null : cachedThrowableInformation.getThrowableStrRep();
     }
 
     private void readObject(ObjectInputStream ois) throws java.io.IOException, ClassNotFoundException {

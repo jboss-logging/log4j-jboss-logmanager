@@ -27,9 +27,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Arrays;
 
-import junit.framework.Assert;
 import org.apache.log4j.spi.LoggingEvent;
 import org.jboss.logmanager.ExtLogRecord;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -63,5 +63,30 @@ public class LoggingEventTest {
         } finally {
             objIn.close();
         }
+    }
+
+    @Test
+    public void testThrowableInformation() throws Exception {
+        final String category = "org.apache.log4j.test";
+        final Logger logger = Logger.getLogger(category);
+        final ExtLogRecord logRecord = new ExtLogRecord(org.jboss.logmanager.Level.INFO, "A test logging event", category);
+        LoggingEvent loggingEvent = new LoggingEvent(logRecord, logger);
+
+        Assert.assertNull("Expected the throwableInformation to be null", loggingEvent.getThrowableInformation());
+        Assert.assertNull(loggingEvent.getThrowableStrRep());
+
+        final RuntimeException thrown = new RuntimeException("testException");
+        logRecord.setThrown(thrown);
+        loggingEvent = new LoggingEvent(logRecord, logger);
+
+        Assert.assertNotNull(loggingEvent.getThrowableInformation());
+        Assert.assertNotNull(loggingEvent.getThrowableStrRep());
+        Assert.assertEquals(thrown, loggingEvent.getThrowableInformation().getThrowable());
+
+        loggingEvent = new LoggingEvent(LoggingEventTest.class.getName(), logger, Level.INFO, "A test logging event", thrown);
+
+        Assert.assertNotNull(loggingEvent.getThrowableInformation());
+        Assert.assertNotNull(loggingEvent.getThrowableStrRep());
+        Assert.assertEquals(thrown, loggingEvent.getThrowableInformation().getThrowable());
     }
 }
