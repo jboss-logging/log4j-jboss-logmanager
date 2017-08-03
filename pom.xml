@@ -117,6 +117,7 @@
                                         <exclude>org/apache/log4j/NDC$*.class</exclude>
                                         <exclude>org/apache/log4j/helpers/Loader.class</exclude>
                                         <exclude>org/apache/log4j/helpers/Loader$*.class</exclude>
+                                        <exclude>org/apache/log4j/net/SocketNode.class</exclude>
                                         <exclude>org/apache/log4j/spi/LoggingEvent.class</exclude>
                                         <exclude>org/apache/log4j/spi/LoggingEvent$*.class</exclude>
                                         <exclude>org/apache/log4j/spi/NOPLogger.class</exclude>
