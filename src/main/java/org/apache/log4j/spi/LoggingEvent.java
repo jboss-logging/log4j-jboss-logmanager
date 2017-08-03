@@ -34,6 +34,7 @@ public class LoggingEvent implements Serializable {
     static final long serialVersionUID = -868428216207166145L;
 
     private static final Field logRecordField;
+    private static final Field fqnOfCategoryClassField;
 
     // Pre-sorted to speed class serialization analysis
     private static final ObjectStreamField[] serialPersistentFields = new ObjectStreamField[] {
@@ -59,18 +60,8 @@ public class LoggingEvent implements Serializable {
             time = System.currentTimeMillis();
         }
         startTime = time;
-        logRecordField = AccessController.doPrivileged(new PrivilegedAction<Field>() {
-            public Field run() {
-                final Field field;
-                try {
-                    field = LoggingEvent.class.getDeclaredField("logRecord");
-                } catch (NoSuchFieldException e) {
-                    throw new NoSuchFieldError(e.getMessage());
-                }
-                field.setAccessible(true);
-                return field;
-            }
-        });
+        logRecordField = getField("logRecord");
+        fqnOfCategoryClassField = getField("fqnOfCategoryClass");
     }
 
     //// Public fields
@@ -281,7 +272,12 @@ public class LoggingEvent implements Serializable {
             }
         }
 
-        final Object categoryName = (String) getField.get("categoryName", null);
+        this.level = level;
+
+        final String categoryName = (String) getField.get("categoryName", null);
+        if (categoryName != null) {
+            logger = Logger.getLogger(categoryName);
+        }
         final Hashtable mdcCopy = (Hashtable) getField.get("mdcCopy", null);
         final String ndc = (String) getField.get("ndc", null);
         final String renderedMessage = (String) getField.get("renderedMessage", null);
@@ -289,10 +285,12 @@ public class LoggingEvent implements Serializable {
         final String threadName = (String) getField.get("threadName", null);
         final ThrowableInformation throwableInfo = (ThrowableInformation) getField.get("throwableInfo", ThrowableInformation.class);
         cachedThrowableInformation = throwableInfo;
-        throwableInfo.getThrowableStrRep(); // force string representation to be cached
+        if (throwableInfo != null) {
+            throwableInfo.getThrowableStrRep(); // force string representation to be cached
+        }
 
         final ExtLogRecord record = new ExtLogRecord(JBossLevelMapping.getLevelFor(level), renderedMessage, ExtLogRecord.FormatStyle.NO_FORMAT, Logger.class.getName());
-        if (categoryName != null) record.setLoggerName(categoryName.toString());
+        if (categoryName != null) record.setLoggerName(categoryName);
         record.setMdc(mdcCopy == null ? Collections.<Object, Object>emptyMap() : mdcCopy);
         record.setNdc(ndc == null ? "" : ndc);
         record.setMillis(timeStamp);
@@ -301,6 +299,7 @@ public class LoggingEvent implements Serializable {
         record.disableCallerCalculation();
         cachedLocationInfo = new LocationInfo(null, null);
         try {
+            fqnOfCategoryClassField.set(this, record.getLoggerClassName());
             logRecordField.set(this, record);
         } catch (IllegalAccessException e) {
             throw new IllegalAccessError(e.getMessage());
@@ -358,5 +357,20 @@ public class LoggingEvent implements Serializable {
 
     public ExtLogRecord getLogRecord() {
         return logRecord;
+    }
+
+    private static Field getField(final String name) {
+        return AccessController.doPrivileged(new PrivilegedAction<Field>() {
+            public Field run() {
+                final Field field;
+                try {
+                    field = LoggingEvent.class.getDeclaredField(name);
+                } catch (NoSuchFieldException e) {
+                    throw new NoSuchFieldError(e.getMessage());
+                }
+                field.setAccessible(true);
+                return field;
+            }
+        });
     }
 }
