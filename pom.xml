@@ -80,6 +80,15 @@
     <build>
         <plugins>
             <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <includeDependencySources>true</includeDependencySources>
+                    <sourceFileIncludes>
+                        <include>org/apache/log4j/**</include>
+                    </sourceFileIncludes>
+                </configuration>
+            </plugin>
+            <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>1.4</version>
                 <executions>
