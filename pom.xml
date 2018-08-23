@@ -82,10 +82,14 @@
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
+                    <additionalparam>-Xdoclint:none</additionalparam>
                     <includeDependencySources>true</includeDependencySources>
-                    <sourceFileIncludes>
+                    <!-- <sourceFileIncludes>
                         <include>org/apache/log4j/**</include>
-                    </sourceFileIncludes>
+                    </sourceFileIncludes> -->
+                                        <dependencySourceIncludes>
+                        <dependencySourceInclude>org.apache.log4j:*</dependencySourceInclude>
+                    </dependencySourceIncludes>
                 </configuration>
             </plugin>
             <plugin>
