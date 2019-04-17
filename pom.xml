@@ -76,11 +76,18 @@
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
-                    <additionalparam>-Xdoclint:none</additionalparam>
+                    <doclint>none</doclint>
                     <includeDependencySources>true</includeDependencySources>
                     <sourceFileIncludes>
                         <include>org/apache/log4j/**</include>
                     </sourceFileIncludes>
+                    <sourceFileExcludes>
+                        <exclude>**/*.html</exclude>
+                        <exclude>**/*.gif</exclude>
+                        <exclude>**/*.dtd</exclude>
+                        <exclude>**/*.png</exclude>
+                        <exclude>**/*.properties</exclude>
+                    </sourceFileExcludes>
                 </configuration>
             </plugin>
             <plugin>
