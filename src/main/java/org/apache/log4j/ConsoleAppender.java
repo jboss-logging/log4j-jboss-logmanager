@@ -172,7 +172,12 @@ public class ConsoleAppender extends WriterAppender {
     }
 
     private static PrintStream createPrintStream(final FileDescriptor fd) {
-        return new PrintStream(new BufferedOutputStream(new FileOutputStream(fd), 128));
+        return new PrintStream(new BufferedOutputStream(new FileOutputStream(fd) {
+            @Override
+            public void close() {
+                // Do nothing, we don't want to close the FD
+            }
+        }, 128));
     }
 
 
