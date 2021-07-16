@@ -230,7 +230,7 @@ public class SMTPAppender extends AppenderSkeleton
         String prefix = "mail.smtp";
         // If mail.smtp.ssl.checkserveridentity is not defined, default to true. See CVE-2020-9488
         final String currentValue = props.getProperty(prefix + ".ssl.checkserveridentity");
-        if (currentValue == null || currentValue.isEmpty()) {
+        if (!"false".equalsIgnoreCase(currentValue)) {
             props.put(prefix + ".ssl.checkserveridentity", "true");
         }
 
