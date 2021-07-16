@@ -40,6 +40,14 @@
     </parent>
 
     <dependencies>
+        <!-- Required for the SMTPAppender -->
+        <dependency>
+            <groupId>jakarta.mail</groupId>
+            <artifactId>jakarta.mail-api</artifactId>
+            <version>1.6.7</version>
+            <!-- Not required at runtime if the SMTPAppender is not used -->
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>org.jboss.modules</groupId>
             <artifactId>jboss-modules</artifactId>
