@@ -30,6 +30,7 @@ public class JBossLevelMapping {
         map.put(java.util.logging.Level.FINE, Level.DEBUG);
         map.put(java.util.logging.Level.FINER, Level.TRACE);
         map.put(java.util.logging.Level.FINEST, Level.TRACE);
+        map.put(java.util.logging.Level.OFF, Level.OFF);
 
         map.put(org.jboss.logmanager.Level.FATAL, Level.FATAL);
         map.put(org.jboss.logmanager.Level.ERROR, Level.ERROR);
