@@ -25,5 +25,6 @@ log manager calls to configure the https://github.com/jboss-logging/jboss-logman
 
 The following types have been removed from this library that are in standard log4j.
 
+* `org.apache.log4j.jdbc.JDBCAppender`
 * `org.apache.log4j.net.JMSAppender`
 * `org.apache.log4j.net.JMSSink`
