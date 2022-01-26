@@ -1,0 +1,29 @@
+= log4j-jboss-logmanager
+
+== Overview
+
+This project is somewhat a fork of log4j 1.x. It creates a library which shades in parts of log4j and replaces the
+log manager calls to configure the https://github.com/jboss-logging/jboss-logmanager[jboss-logmanager].
+
+== Usage
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.jboss.logmanager</groupId>
+    <artifactId>log4j-jboss-logmanager</artifactId>
+    <version>${version.org.jboss.logmanager.log4j-jboss-logmanager}</version>
+</dependency>
+<dependency>
+    <groupId>org.jboss.logmanager</groupId>
+    <artifactId>jboss-logmanager</artifactId>
+    <version>${version.org.jboss.logmanager.jboss-logmanager}</version>
+</dependency>
+----
+
+== What's missing from standard log4j?
+
+The following types have been removed from this library that are in standard log4j.
+
+* `org.apache.log4j.net.JMSAppender`
+* `org.apache.log4j.net.JMSSink`

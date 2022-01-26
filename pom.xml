@@ -135,6 +135,8 @@
                                         <exclude>org/apache/log4j/NDC$*.class</exclude>
                                         <exclude>org/apache/log4j/helpers/Loader.class</exclude>
                                         <exclude>org/apache/log4j/helpers/Loader$*.class</exclude>
+                                        <exclude>org/apache/log4j/net/JMSAppender.class</exclude>
+                                        <exclude>org/apache/log4j/net/JMSSink.class</exclude>
                                         <exclude>org/apache/log4j/net/SocketNode.class</exclude>
                                         <exclude>org/apache/log4j/net/SMTPAppender.class</exclude>
                                         <exclude>org/apache/log4j/net/SMTPAppender$*.class</exclude>
