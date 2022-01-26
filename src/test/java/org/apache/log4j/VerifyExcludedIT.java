@@ -52,12 +52,18 @@ public class VerifyExcludedIT {
             ensureRemoved(fs, JMSAppender.class);
             ensureRemoved(fs, JMSSink.class);
             ensureRemoved(fs, JDBCAppender.class);
+            ensureRemoved(fs, org.apache.log4j.chainsaw.Main.class.getPackage());
         }
     }
 
     private void ensureRemoved(final FileSystem fs, final Class<?> type) {
         final Path file = fs.getPath(fs.getSeparator(), type.getCanonicalName().replace('.', '/') + ".class");
         Assert.assertTrue(String.format("Expected type %s to not exist: %s", type.getCanonicalName(), file), Files.notExists(file));
+    }
+
+    private void ensureRemoved(final FileSystem fs, final Package p) {
+        final Path dir = fs.getPath(fs.getSeparator(), p.getName().replace('.', '/'));
+        Assert.assertTrue(String.format("Expected package %s to not exist: %s", p.getName(), dir), Files.notExists(dir));
     }
 
     private static FileSystem zipFs(final Path path) throws IOException {
