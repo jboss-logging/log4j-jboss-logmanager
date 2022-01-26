@@ -153,6 +153,9 @@
                                         <exclude>org/apache/log4j/spi/LoggingEvent$*.class</exclude>
                                         <exclude>org/apache/log4j/spi/NOPLogger.class</exclude>
                                         <exclude>org/apache/log4j/spi/NOPLogger$*.class</exclude>
+                                        <exclude>org/apache/log4j/xml/DOMConfigurator.class</exclude>
+                                        <exclude>org/apache/log4j/xml/DOMConfigurator$*.class</exclude>
+                                        <exclude>org/apache/log4j/xml/XMLWatchdog.class</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -177,7 +180,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
-                        <jar.name>${build.directory}${file.separator}${build.finalName}.jar</jar.name>
+                        <jar.name>${project.build.directory}${file.separator}${project.build.finalName}.jar</jar.name>
                     </systemPropertyVariables>
                 </configuration>
                 <executions>
