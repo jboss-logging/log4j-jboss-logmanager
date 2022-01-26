@@ -140,6 +140,7 @@
                                         <exclude>org/apache/log4j/MDC$*.class</exclude>
                                         <exclude>org/apache/log4j/NDC.class</exclude>
                                         <exclude>org/apache/log4j/NDC$*.class</exclude>
+                                        <exclude>org/apache/log4j/chainsaw/*</exclude>
                                         <exclude>org/apache/log4j/helpers/Loader.class</exclude>
                                         <exclude>org/apache/log4j/helpers/Loader$*.class</exclude>
                                         <exclude>org/apache/log4j/jdbc/JDBCAppender.class</exclude>
