@@ -132,6 +132,9 @@
                                         <exclude>org/apache/log4j/spi/LoggingEvent$*.class</exclude>
                                         <exclude>org/apache/log4j/spi/NOPLogger.class</exclude>
                                         <exclude>org/apache/log4j/spi/NOPLogger$*.class</exclude>
+                                        <exclude>org/apache/log4j/net/SimpleSocketServer.class</exclude>
+                                        <exclude>org/apache/log4j/net/SocketServer.class</exclude>
+                                        <exclude>org/apache/log4j/chainsaw/*</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
