@@ -12,7 +12,10 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.log4j.JBossLogManagerFacade;
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.LogContext;
 import org.jboss.modules.Module;
 
 import org.apache.log4j.Category;
@@ -74,6 +77,7 @@ public class LoggingEvent implements Serializable {
     public final transient String fqnOfCategoryClass;
     public transient Priority level;
 
+    private transient final org.jboss.logmanager.LogContext logContext;
     private transient Category logger;
 
     //// Private fields
@@ -104,6 +108,7 @@ public class LoggingEvent implements Serializable {
             logRecord.setThrown(throwable);
         }
         logRecord.setMillis(timeStamp = System.currentTimeMillis());
+        logContext = null;
     }
 
     public LoggingEvent(String fqnOfCategoryClass, Category logger, long timeStamp, Priority level, Object message, Throwable throwable) {
@@ -120,6 +125,7 @@ public class LoggingEvent implements Serializable {
             logRecord.setThrown(throwable);
         }
         logRecord.setMillis(this.timeStamp = timeStamp);
+        logContext = null;
     }
 
     public LoggingEvent(final String fqnOfCategoryClass, final Category logger, final long timeStamp, final Level level, final Object message, final String threadName, final ThrowableInformation throwable, final String ndc, final LocationInfo info, final java.util.Map properties) {
@@ -157,10 +163,12 @@ public class LoggingEvent implements Serializable {
         if (properties != null) {
             logRecord.setMdc(properties);
         }
+        logContext = null;
     }
 
-    // our own constructor
+    // our own constructors
 
+    // This one is for testing only!
     public LoggingEvent(final ExtLogRecord logRecord, final Category logger) {
         this.logRecord = logRecord;
         fqnOfCategoryClass = logRecord.getLoggerClassName();
@@ -168,6 +176,16 @@ public class LoggingEvent implements Serializable {
         level = JBossLevelMapping.getPriorityFor(logRecord.getLevel());
         categoryName = logRecord.getLoggerName();
         timeStamp = logRecord.getMillis();
+        logContext = null;
+    }
+
+    public LoggingEvent(final ExtLogRecord logRecord, final LogContext logContext) {
+        this.logRecord = logRecord;
+        fqnOfCategoryClass = logRecord.getLoggerClassName();
+        level = JBossLevelMapping.getPriorityFor(logRecord.getLevel());
+        categoryName = logRecord.getLoggerName();
+        timeStamp = logRecord.getMillis();
+        this.logContext = logContext;
     }
 
     public LocationInfo getLocationInformation() {
@@ -186,6 +204,12 @@ public class LoggingEvent implements Serializable {
     }
 
     public Category getLogger() {
+        Category logger = this.logger;
+        if (logger == null) {
+            // lazily populate
+            assert logContext != null; // otherwise, our `logger` would be populated per constructor
+            logger = this.logger = JBossLogManagerFacade.getLogger(logContext.getLogger(categoryName));
+        }
         return logger;
     }
 

@@ -2,6 +2,7 @@ package org.apache.log4j;
 
 import java.util.List;
 
+import org.apache.log4j.spi.Filter;
 import org.apache.log4j.spi.LoggingEvent;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
@@ -27,12 +28,28 @@ final class JBossAppenderHandler extends ExtHandler {
 
     @Override
     protected void doPublish(final ExtLogRecord record) {
-        final LoggingEvent event = new LoggingEvent(record, JBossLogManagerFacade.getLogger(logger));
+        final LoggingEvent event = new LoggingEvent(record, logger.getLogContext());
         final List<Appender> appenders = Appenders.getAppenderList(logger);
-        for (Appender appender : appenders) {
-            if (new JBossFilterWrapper(appender.getFilter(), true).isLoggable(record)) {
-                appender.doAppend(event);
+        outer: for (Appender appender : appenders) {
+            Filter filter = appender.getFilter();
+            inner: while (filter != null) {
+                switch (appender.getFilter().decide(event)) {
+                    case Filter.DENY: {
+                        // skip this appender
+                        continue outer;
+                    }
+                    case Filter.ACCEPT: {
+                        // accept this message
+                        break inner;
+                    }
+                    default: {
+                        // defer decision
+                        break;
+                    }
+                }
+                filter = filter.getNext();
             }
+            appender.doAppend(event);
         }
     }
 
