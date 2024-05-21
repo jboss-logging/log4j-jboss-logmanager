@@ -131,7 +131,7 @@ public class JBossLogManagerFacade {
      *
      * @return the logger or {@code null} if no logger is attached.
      */
-    static Logger getLogger(org.jboss.logmanager.Logger lmLogger) {
+    public static Logger getLogger(org.jboss.logmanager.Logger lmLogger) {
         return getAttachment(lmLogger, LOGGER_KEY);
     }
 
