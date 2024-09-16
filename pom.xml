@@ -149,6 +149,7 @@
                                         <exclude>org/apache/log4j/net/SocketNode.class</exclude>
                                         <exclude>org/apache/log4j/net/SMTPAppender.class</exclude>
                                         <exclude>org/apache/log4j/net/SMTPAppender$*.class</exclude>
+                                        <exclude>org/apache/log4j/nt/NTEventLogAppender.class</exclude>
                                         <exclude>org/apache/log4j/spi/LoggingEvent.class</exclude>
                                         <exclude>org/apache/log4j/spi/LoggingEvent$*.class</exclude>
                                         <exclude>org/apache/log4j/spi/NOPLogger.class</exclude>
