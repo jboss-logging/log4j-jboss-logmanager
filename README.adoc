@@ -1,5 +1,23 @@
 = log4j-jboss-logmanager
 
+[WARNING]
+====
+*This project has reached end-of-life and is no longer maintained.*
+
+This library was created as a bridge to allow applications using Log4j 1.x APIs to delegate to the https://github.com/jboss-logging/jboss-logmanager[jboss-logmanager] (a JUL extension). However, Log4j 1.x reached end-of-life in August 2015 and has not received updates for critical security vulnerabilities.
+
+*Migration Path:*
+
+If you need to continue delegating to jboss-logmanager, migrate to:
+
+* https://logging.apache.org/log4j/2.x/[Log4j 2] API (with https://logging.apache.org/log4j/2.x/manual/migration.html[migration guide])
+* https://github.com/jboss-logging/log4j2-jboss-logmanager[log4j2-jboss-logmanager] - The Log4j 2 equivalent of this library
+
+If you do not require jboss-logmanager integration, you can migrate to any modern logging framework such as JBoss Logging, Log4j 2, SLF4J/Logback, or JUL.
+
+*Repository Status:* This repository has been archived and no further updates will be provided.
+====
+
 == Overview
 
 This project is somewhat a fork of log4j 1.x. It creates a library which shades in parts of log4j and replaces the
